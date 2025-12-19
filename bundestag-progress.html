@@ -13,7 +13,7 @@
             --card-bg: #ffffff;
             --text: #333333;
             --text-light: #666666;
-            --completed: #4CAF50;
+            --dissolved: #E53935;
             --current: #2196F3;
         }
 
@@ -110,8 +110,8 @@
             color: white;
         }
 
-        .status-completed {
-            background: var(--completed);
+        .status-dissolved {
+            background: var(--dissolved);
             color: white;
         }
 
@@ -145,8 +145,8 @@
             background: linear-gradient(90deg, var(--current) 0%, #1976D2 100%);
         }
 
-        .progress-completed {
-            background: linear-gradient(90deg, var(--completed) 0%, #388E3C 100%);
+        .progress-dissolved {
+            background: linear-gradient(90deg, var(--dissolved) 0%, #C62828 100%);
         }
 
         .dates-row {
@@ -249,10 +249,10 @@
         </div>
 
         <!-- 20th Bundestag (Previous) -->
-        <div class="bundestag-card completed">
+        <div class="bundestag-card dissolved">
             <div class="card-header">
                 <h2>20th Bundestag <span class="election-date">26 Sep 2021</span></h2>
-                <span class="status-badge status-completed">Completed</span>
+                <span class="status-badge status-dissolved">Dissolved</span>
             </div>
             <div class="card-body">
                 <div class="dates-row">
@@ -262,12 +262,12 @@
                     </div>
                     <div class="date-item">
                         <div class="label">Remaining</div>
-                        <div class="value">0 days</div>
+                        <div class="value">303 days</div>
                     </div>
                 </div>
 
                 <div class="progress-bar-container">
-                    <div class="progress-bar progress-completed" style="width: 100%">100%</div>
+                    <div class="progress-bar progress-dissolved" style="width: 79.3%">79.3%</div>
                 </div>
 
             </div>
