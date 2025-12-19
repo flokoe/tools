@@ -3,7 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bundestag Fortschritt</title>
+    <title>Bundestag Fortschritt – Legislaturperioden-Tracker</title>
+    <meta name="description" content="Verfolge den Fortschritt der aktuellen Legislaturperiode des Deutschen Bundestags. Vergleich zwischen dem 21. Bundestag (Schwarz-Rot) und dem aufgelösten 20. Bundestag (Ampel).">
+    <meta name="keywords" content="Bundestag, Legislaturperiode, Deutschland, Politik, Ampel, Schwarz-Rot, Koalition, Fortschritt">
+    <meta name="author" content="Florian">
+    <link rel="canonical" href="https://tools.flokoe.de/bundestag-fortschritt.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://tools.flokoe.de/bundestag-fortschritt.html">
+    <meta property="og:title" content="Bundestag Fortschritt – Legislaturperioden-Tracker">
+    <meta property="og:description" content="Verfolge den Fortschritt der aktuellen Legislaturperiode. Hält der 21. Bundestag länger als die Ampel?">
+    <meta property="og:locale" content="de_DE">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Bundestag Fortschritt – Legislaturperioden-Tracker">
+    <meta name="twitter:description" content="Verfolge den Fortschritt der aktuellen Legislaturperiode. Hält der 21. Bundestag länger als die Ampel?">
+
+    <!-- Theme color for mobile browsers -->
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)">
+
     <style>
         :root {
             --primary: #000000;
@@ -240,17 +261,7 @@
 
         @media (max-width: 480px) {
             .container {
-                padding: 1rem;
-            }
-
-            .card-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .progress-bar {
-                font-size: 0.7rem;
-                padding-right: 4px;
+                padding: 2rem 1rem 1rem;
             }
         }
     </style>
@@ -376,6 +387,21 @@
 
         // Update every minute
         setInterval(updateProgress, 60000);
+    </script>
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Bundestag Fortschritt",
+        "description": "Verfolge den Fortschritt der aktuellen Legislaturperiode des Deutschen Bundestags.",
+        "inLanguage": "de",
+        "about": {
+            "@type": "GovernmentOrganization",
+            "name": "Deutscher Bundestag",
+            "url": "https://www.bundestag.de"
+        }
+    }
     </script>
 </body>
 </html>
