@@ -62,7 +62,7 @@
         .flag-stripe .gold { background: var(--accent); }
 
         .container {
-            max-width: 900px;
+            max-width: 600px;
             margin: 0 auto;
             padding: 4rem 1.5rem 1.5rem;
         }
@@ -89,6 +89,12 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+        }
+
+        .card-header h2 .election-date {
+            font-weight: 400;
+            color: var(--text-light);
+            font-size: 0.85em;
         }
 
         .status-badge {
@@ -145,7 +151,7 @@
 
         .dates-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 1rem;
             margin-bottom: 1.25rem;
         }
@@ -220,22 +226,18 @@
         <!-- 21st Bundestag (Current) -->
         <div class="bundestag-card">
             <div class="card-header">
-                <h2>21st Bundestag</h2>
+                <h2>21st Bundestag <span class="election-date">23 Feb 2025</span></h2>
                 <span class="status-badge status-current">Current</span>
             </div>
             <div class="card-body">
                 <div class="dates-row">
                     <div class="date-item">
-                        <div class="label">Election</div>
-                        <div class="value">23 Feb 2025</div>
+                        <div class="label">Elapsed</div>
+                        <div class="value" id="elapsed21">-</div>
                     </div>
                     <div class="date-item">
-                        <div class="label">Constituted</div>
-                        <div class="value">25 Mar 2025</div>
-                    </div>
-                    <div class="date-item">
-                        <div class="label">Expected End</div>
-                        <div class="value">Fall 2029</div>
+                        <div class="label">Remaining</div>
+                        <div class="value" id="remaining21">-</div>
                     </div>
                 </div>
 
@@ -249,22 +251,18 @@
         <!-- 20th Bundestag (Previous) -->
         <div class="bundestag-card completed">
             <div class="card-header">
-                <h2>20th Bundestag</h2>
+                <h2>20th Bundestag <span class="election-date">26 Sep 2021</span></h2>
                 <span class="status-badge status-completed">Completed</span>
             </div>
             <div class="card-body">
                 <div class="dates-row">
                     <div class="date-item">
-                        <div class="label">Election</div>
-                        <div class="value">26 Sep 2021</div>
+                        <div class="label">Elapsed</div>
+                        <div class="value">1,158 days</div>
                     </div>
                     <div class="date-item">
-                        <div class="label">Constituted</div>
-                        <div class="value">26 Oct 2021</div>
-                    </div>
-                    <div class="date-item">
-                        <div class="label">Dissolved</div>
-                        <div class="value">27 Dec 2024</div>
+                        <div class="label">Remaining</div>
+                        <div class="value">0 days</div>
                     </div>
                 </div>
 
@@ -297,6 +295,10 @@
             const progressBar = document.getElementById('progress21');
             progressBar.style.width = progress21.toFixed(1) + '%';
             progressBar.textContent = progress21.toFixed(1) + '%';
+
+            const remainingDays21 = Math.max(0, (end21 - now) / (1000 * 60 * 60 * 24));
+            document.getElementById('elapsed21').textContent = Math.floor(elapsedDays21).toLocaleString() + ' days';
+            document.getElementById('remaining21').textContent = Math.floor(remainingDays21).toLocaleString() + ' days';
         }
 
         // Initial update
