@@ -232,7 +232,7 @@
         <!-- 21st Bundestag (Current) -->
         <div class="bundestag-card">
             <div class="card-header">
-                <h2>21st Bundestag <span class="election-date">23 Feb 2025</span></h2>
+                <h2>21st Bundestag <span class="election-date">25 Mar 2025</span></h2>
                 <span class="status-badge status-current">Current</span>
                 <div class="coalition"><strong>Schwarz-Rot</strong> — CDU/CSU · SPD</div>
             </div>
@@ -258,7 +258,7 @@
         <!-- 20th Bundestag (Previous) -->
         <div class="bundestag-card dissolved">
             <div class="card-header">
-                <h2>20th Bundestag <span class="election-date">26 Sep 2021</span></h2>
+                <h2>20th Bundestag <span class="election-date">26 Oct 2021</span></h2>
                 <span class="status-badge status-dissolved">Dissolved</span>
                 <div class="coalition"><strong>Ampel</strong> — SPD · Grüne · FDP</div>
             </div>
@@ -266,16 +266,16 @@
                 <div class="dates-row">
                     <div class="date-item">
                         <div class="label">Elapsed</div>
-                        <div class="value">1,158 days</div>
+                        <div class="value" id="elapsed20">-</div>
                     </div>
                     <div class="date-item">
                         <div class="label">Remaining</div>
-                        <div class="value">303 days</div>
+                        <div class="value" id="remaining20">-</div>
                     </div>
                 </div>
 
                 <div class="progress-bar-container">
-                    <div class="progress-bar progress-dissolved" style="width: 79.3%">79.3%</div>
+                    <div class="progress-bar progress-dissolved" id="progress20" style="width: 0%"></div>
                 </div>
 
             </div>
@@ -290,8 +290,9 @@
     <script>
         // Calculate and update progress for 21st Bundestag
         function updateProgress() {
-            const start21 = new Date('2025-03-25'); // Constituent session
-            const end21 = new Date('2029-09-30'); // Expected end (approximate)
+            // 21st Bundestag: Constituted 25 March 2025, ends when 22nd convenes (~4 years)
+            const start21 = new Date('2025-03-25'); // Constituted date
+            const end21 = new Date('2029-03-25');   // End of legislative period (4 years)
             const now = new Date();
 
             // Calculate 21st Bundestag progress
@@ -301,12 +302,27 @@
 
             // Update UI
             const progressBar = document.getElementById('progress21');
-            progressBar.style.width = progress21.toFixed(1) + '%';
-            progressBar.textContent = progress21.toFixed(1) + '%';
+            progressBar.style.width = progress21.toFixed(2) + '%';
+            progressBar.textContent = progress21.toFixed(2) + '%';
 
             const remainingDays21 = Math.max(0, (end21 - now) / (1000 * 60 * 60 * 24));
             document.getElementById('elapsed21').textContent = Math.floor(elapsedDays21).toLocaleString() + ' days';
             document.getElementById('remaining21').textContent = Math.floor(remainingDays21).toLocaleString() + ' days';
+
+            // 20th Bundestag: Constituted 26 Oct 2021, ended 25 Mar 2025 (when 21st convened)
+            const start20 = new Date('2021-10-26'); // Constituted date
+            const end20 = new Date('2025-03-25');   // End of legislative period (21st convened)
+            const scheduledEnd20 = new Date('2025-10-26'); // Would have been 4 years from constitution
+
+            const elapsedDays20 = (end20 - start20) / (1000 * 60 * 60 * 24);
+            const scheduledDays20 = (scheduledEnd20 - start20) / (1000 * 60 * 60 * 24);
+            const cutShortDays20 = (scheduledEnd20 - end20) / (1000 * 60 * 60 * 24);
+            const progress20 = (elapsedDays20 / scheduledDays20) * 100;
+
+            document.getElementById('elapsed20').textContent = Math.floor(elapsedDays20).toLocaleString() + ' days';
+            document.getElementById('remaining20').textContent = Math.floor(cutShortDays20).toLocaleString() + ' days';
+            document.getElementById('progress20').style.width = progress20.toFixed(2) + '%';
+            document.getElementById('progress20').textContent = progress20.toFixed(2) + '%';
         }
 
         // Initial update
