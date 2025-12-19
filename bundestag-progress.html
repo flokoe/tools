@@ -68,7 +68,7 @@
             display: flex;
         }
 
-        .flag-stripe span {
+        .flag-stripe div {
             flex: 1;
         }
 
@@ -110,6 +110,7 @@
             font-weight: 400;
             color: var(--text-light);
             font-size: 0.85em;
+            font-style: normal;
         }
 
         .card-header .coalition {
@@ -188,31 +189,31 @@
             background: linear-gradient(90deg, var(--dissolved) 0%, #C62828 100%);
         }
 
-        .dates-row {
+        .stats-list {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 1rem;
-            margin-bottom: 1.25rem;
+            margin: 0 0 1.25rem;
         }
 
-        .date-item {
+        .stats-list > div {
             text-align: center;
             padding: 0.75rem;
             background: var(--date-item-bg);
             border-radius: 8px;
         }
 
-        .date-item .label {
+        .stats-list dt {
             font-size: 0.75rem;
             color: var(--text-light);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .date-item .value {
+        .stats-list dd {
             font-weight: 600;
             font-size: 0.95rem;
-            margin-top: 0.25rem;
+            margin: 0.25rem 0 0;
         }
 
 
@@ -230,6 +231,11 @@
 
         .footer a:hover {
             text-decoration: underline;
+        }
+
+        a:focus-visible {
+            outline: 3px solid var(--current);
+            outline-offset: 2px;
         }
 
         @media (max-width: 480px) {
@@ -250,10 +256,10 @@
     </style>
 </head>
 <body>
-    <div class="flag-stripe">
-        <span class="black"></span>
-        <span class="red"></span>
-        <span class="gold"></span>
+    <div class="flag-stripe" aria-hidden="true">
+        <div class="black"></div>
+        <div class="red"></div>
+        <div class="gold"></div>
     </div>
 
     <header class="header">
@@ -261,63 +267,61 @@
         <p>Halten sie länger als die Ampel? 🍿</p>
     </header>
 
-    <div class="container">
-        <!-- 21st Bundestag (Current) -->
-        <div class="bundestag-card">
-            <div class="card-header">
-                <h2>21. Bundestag <span class="election-date">25. März 2025</span></h2>
+    <main class="container">
+        <!-- 21. Bundestag (Aktuell) -->
+        <article class="bundestag-card">
+            <header class="card-header">
+                <h2>21. Bundestag <time class="election-date" datetime="2025-03-25">25. März 2025</time></h2>
                 <span class="status-badge status-current">Aktuell</span>
-                <div class="coalition"><span class="party-dot party-cdu"></span><span class="party-dot party-spd"></span> <strong>Schwarz-Rot</strong>&nbsp;– CDU/CSU · SPD</div>
-            </div>
+                <p class="coalition"><span class="party-dot party-cdu" aria-hidden="true"></span><span class="party-dot party-spd" aria-hidden="true"></span> <strong>Schwarz-Rot</strong>&nbsp;– CDU/CSU · SPD</p>
+            </header>
             <div class="card-body">
-                <div class="dates-row">
-                    <div class="date-item">
-                        <div class="label">Vergangen</div>
-                        <div class="value" id="elapsed21">-</div>
+                <dl class="stats-list">
+                    <div>
+                        <dt>Vergangen</dt>
+                        <dd id="elapsed21">-</dd>
                     </div>
-                    <div class="date-item">
-                        <div class="label">Verbleibend</div>
-                        <div class="value" id="remaining21">-</div>
+                    <div>
+                        <dt>Verbleibend</dt>
+                        <dd id="remaining21">-</dd>
                     </div>
-                </div>
+                </dl>
 
-                <div class="progress-bar-container">
-                    <div class="progress-bar progress-current" id="progress21" style="width: 0%"></div>
+                <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Fortschritt 21. Legislaturperiode" id="progress21-container">
+                    <div class="progress-bar progress-current" id="progress21" style="width: 0%" aria-hidden="true"></div>
                 </div>
-
             </div>
-        </div>
+        </article>
 
-        <!-- 20th Bundestag (Previous) -->
-        <div class="bundestag-card dissolved">
-            <div class="card-header">
-                <h2>20. Bundestag <span class="election-date">26. Okt. 2021</span></h2>
+        <!-- 20. Bundestag (Aufgelöst) -->
+        <article class="bundestag-card">
+            <header class="card-header">
+                <h2>20. Bundestag <time class="election-date" datetime="2021-10-26">26. Okt. 2021</time></h2>
                 <span class="status-badge status-dissolved">Aufgelöst</span>
-                <div class="coalition"><span class="party-dot party-spd"></span><span class="party-dot party-gruene"></span><span class="party-dot party-fdp"></span> <strong>Ampel</strong>&nbsp;– SPD · Grüne · FDP</div>
-            </div>
+                <p class="coalition"><span class="party-dot party-spd" aria-hidden="true"></span><span class="party-dot party-gruene" aria-hidden="true"></span><span class="party-dot party-fdp" aria-hidden="true"></span> <strong>Ampel</strong>&nbsp;– SPD · Grüne · FDP</p>
+            </header>
             <div class="card-body">
-                <div class="dates-row">
-                    <div class="date-item">
-                        <div class="label">Vergangen</div>
-                        <div class="value" id="elapsed20">-</div>
+                <dl class="stats-list">
+                    <div>
+                        <dt>Vergangen</dt>
+                        <dd id="elapsed20">-</dd>
                     </div>
-                    <div class="date-item">
-                        <div class="label">Verbleibend</div>
-                        <div class="value" id="remaining20">-</div>
+                    <div>
+                        <dt>Verbleibend</dt>
+                        <dd id="remaining20">-</dd>
                     </div>
-                </div>
+                </dl>
 
-                <div class="progress-bar-container">
-                    <div class="progress-bar progress-dissolved" id="progress20" style="width: 0%"></div>
+                <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Fortschritt 20. Legislaturperiode" id="progress20-container">
+                    <div class="progress-bar progress-dissolved" id="progress20" style="width: 0%" aria-hidden="true"></div>
                 </div>
-
             </div>
-        </div>
-    </div>
+        </article>
+    </main>
 
     <footer class="footer">
         <p>Daten basierend auf offiziellen Bundestag-Informationen</p>
-        <p>Quellen: <a href="https://www.bundestag.de" target="_blank">bundestag.de</a> | <a href="https://de.wikipedia.org/wiki/Bundestag" target="_blank">Wikipedia</a></p>
+        <p>Quellen: <a href="https://www.bundestag.de" target="_blank" rel="noopener">bundestag.de</a> | <a href="https://de.wikipedia.org/wiki/Bundestag" target="_blank" rel="noopener">Wikipedia</a></p>
     </footer>
 
     <script>
@@ -334,9 +338,13 @@
             const progress21 = Math.min(100, (elapsedDays21 / totalDays21) * 100);
 
             // Update UI
-            const progressBar = document.getElementById('progress21');
-            progressBar.style.width = progress21.toFixed(2) + '%';
-            progressBar.textContent = progress21.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '%';
+            const progressBar21 = document.getElementById('progress21');
+            const progressContainer21 = document.getElementById('progress21-container');
+            const progress21Text = progress21.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '%';
+            progressBar21.style.width = progress21.toFixed(2) + '%';
+            progressBar21.textContent = progress21Text;
+            progressContainer21.setAttribute('aria-valuenow', Math.round(progress21));
+            progressContainer21.setAttribute('aria-valuetext', progress21Text + ' abgeschlossen');
 
             const remainingDays21 = Math.max(0, (end21 - now) / (1000 * 60 * 60 * 24));
             document.getElementById('elapsed21').textContent = Math.floor(elapsedDays21).toLocaleString('de-DE') + ' Tage';
@@ -354,8 +362,13 @@
 
             document.getElementById('elapsed20').textContent = Math.floor(elapsedDays20).toLocaleString('de-DE') + ' Tage';
             document.getElementById('remaining20').textContent = Math.floor(cutShortDays20).toLocaleString('de-DE') + ' Tage';
-            document.getElementById('progress20').style.width = progress20.toFixed(2) + '%';
-            document.getElementById('progress20').textContent = progress20.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '%';
+            const progressBar20 = document.getElementById('progress20');
+            const progressContainer20 = document.getElementById('progress20-container');
+            const progress20Text = progress20.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '%';
+            progressBar20.style.width = progress20.toFixed(2) + '%';
+            progressBar20.textContent = progress20Text;
+            progressContainer20.setAttribute('aria-valuenow', Math.round(progress20));
+            progressContainer20.setAttribute('aria-valuetext', progress20Text + ' abgeschlossen');
         }
 
         // Initial update
