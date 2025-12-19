@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>German Bundestag Progress</title>
+    <title>Bundestag Fortschritt</title>
     <style>
         :root {
             --primary: #000000;
@@ -257,26 +257,26 @@
     </div>
 
     <header class="header">
-        <h1>🏛️ German Bundestag Progress</h1>
-        <p>Will they last longer than the Ampel? 🍿</p>
+        <h1>🏛️ Bundestag Fortschritt</h1>
+        <p>Halten sie länger als die Ampel? 🍿</p>
     </header>
 
     <div class="container">
         <!-- 21st Bundestag (Current) -->
         <div class="bundestag-card">
             <div class="card-header">
-                <h2>21st Bundestag <span class="election-date">25 Mar 2025</span></h2>
-                <span class="status-badge status-current">Current</span>
+                <h2>21. Bundestag <span class="election-date">25. März 2025</span></h2>
+                <span class="status-badge status-current">Aktuell</span>
                 <div class="coalition"><span class="party-dot party-cdu"></span><span class="party-dot party-spd"></span> <strong>Schwarz-Rot</strong> — CDU/CSU · SPD</div>
             </div>
             <div class="card-body">
                 <div class="dates-row">
                     <div class="date-item">
-                        <div class="label">Elapsed</div>
+                        <div class="label">Vergangen</div>
                         <div class="value" id="elapsed21">-</div>
                     </div>
                     <div class="date-item">
-                        <div class="label">Remaining</div>
+                        <div class="label">Verbleibend</div>
                         <div class="value" id="remaining21">-</div>
                     </div>
                 </div>
@@ -291,18 +291,18 @@
         <!-- 20th Bundestag (Previous) -->
         <div class="bundestag-card dissolved">
             <div class="card-header">
-                <h2>20th Bundestag <span class="election-date">26 Oct 2021</span></h2>
-                <span class="status-badge status-dissolved">Dissolved</span>
+                <h2>20. Bundestag <span class="election-date">26. Okt. 2021</span></h2>
+                <span class="status-badge status-dissolved">Aufgelöst</span>
                 <div class="coalition"><span class="party-dot party-spd"></span><span class="party-dot party-gruene"></span><span class="party-dot party-fdp"></span> <strong>Ampel</strong> — SPD · Grüne · FDP</div>
             </div>
             <div class="card-body">
                 <div class="dates-row">
                     <div class="date-item">
-                        <div class="label">Elapsed</div>
+                        <div class="label">Vergangen</div>
                         <div class="value" id="elapsed20">-</div>
                     </div>
                     <div class="date-item">
-                        <div class="label">Remaining</div>
+                        <div class="label">Verbleibend</div>
                         <div class="value" id="remaining20">-</div>
                     </div>
                 </div>
@@ -316,8 +316,8 @@
     </div>
 
     <footer class="footer">
-        <p>Data based on official Bundestag information</p>
-        <p>Sources: <a href="https://www.bundestag.de" target="_blank">bundestag.de</a> | <a href="https://en.wikipedia.org/wiki/Bundestag" target="_blank">Wikipedia</a></p>
+        <p>Daten basierend auf offiziellen Bundestag-Informationen</p>
+        <p>Quellen: <a href="https://www.bundestag.de" target="_blank">bundestag.de</a> | <a href="https://de.wikipedia.org/wiki/Bundestag" target="_blank">Wikipedia</a></p>
     </footer>
 
     <script>
@@ -336,11 +336,11 @@
             // Update UI
             const progressBar = document.getElementById('progress21');
             progressBar.style.width = progress21.toFixed(2) + '%';
-            progressBar.textContent = progress21.toFixed(2) + '%';
+            progressBar.textContent = progress21.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '%';
 
             const remainingDays21 = Math.max(0, (end21 - now) / (1000 * 60 * 60 * 24));
-            document.getElementById('elapsed21').textContent = Math.floor(elapsedDays21).toLocaleString() + ' days';
-            document.getElementById('remaining21').textContent = Math.floor(remainingDays21).toLocaleString() + ' days';
+            document.getElementById('elapsed21').textContent = Math.floor(elapsedDays21).toLocaleString('de-DE') + ' Tage';
+            document.getElementById('remaining21').textContent = Math.floor(remainingDays21).toLocaleString('de-DE') + ' Tage';
 
             // 20th Bundestag: Constituted 26 Oct 2021, ended 25 Mar 2025 (when 21st convened)
             const start20 = new Date('2021-10-26'); // Constituted date
@@ -352,10 +352,10 @@
             const cutShortDays20 = (scheduledEnd20 - end20) / (1000 * 60 * 60 * 24);
             const progress20 = (elapsedDays20 / scheduledDays20) * 100;
 
-            document.getElementById('elapsed20').textContent = Math.floor(elapsedDays20).toLocaleString() + ' days';
-            document.getElementById('remaining20').textContent = Math.floor(cutShortDays20).toLocaleString() + ' days';
+            document.getElementById('elapsed20').textContent = Math.floor(elapsedDays20).toLocaleString('de-DE') + ' Tage';
+            document.getElementById('remaining20').textContent = Math.floor(cutShortDays20).toLocaleString('de-DE') + ' Tage';
             document.getElementById('progress20').style.width = progress20.toFixed(2) + '%';
-            document.getElementById('progress20').textContent = progress20.toFixed(2) + '%';
+            document.getElementById('progress20').textContent = progress20.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '%';
         }
 
         // Initial update
