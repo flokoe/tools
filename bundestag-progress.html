@@ -64,7 +64,7 @@
         .container {
             max-width: 900px;
             margin: 0 auto;
-            padding: 1.5rem;
+            padding: 4rem 1.5rem 1.5rem;
         }
 
         .bundestag-card {
@@ -77,7 +77,6 @@
 
         .card-header {
             padding: 1.25rem;
-            border-bottom: 1px solid #eee;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -114,19 +113,6 @@
             padding: 1.25rem;
         }
 
-        .progress-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .progress-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            flex-wrap: wrap;
-            gap: 0.25rem;
-        }
-
         .progress-bar-container {
             background: #e0e0e0;
             border-radius: 10px;
@@ -161,7 +147,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             gap: 1rem;
-            margin-bottom: 1rem;
+            margin-bottom: 1.25rem;
         }
 
         .date-item {
@@ -201,17 +187,6 @@
             text-decoration: underline;
         }
 
-        .current-date {
-            background: var(--accent);
-            color: var(--primary);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            display: inline-block;
-            margin-bottom: 1rem;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
         @media (max-width: 480px) {
             .container {
                 padding: 1rem;
@@ -242,10 +217,6 @@
     </header>
 
     <div class="container">
-        <div style="text-align: center;">
-            <div class="current-date" id="currentDate"></div>
-        </div>
-
         <!-- 21st Bundestag (Current) -->
         <div class="bundestag-card">
             <div class="card-header">
@@ -268,14 +239,8 @@
                     </div>
                 </div>
 
-                <div class="progress-section">
-                    <div class="progress-info">
-                        <span>Term Progress</span>
-                        <span id="progress21-text">Calculating...</span>
-                    </div>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar progress-current" id="progress21" style="width: 0%"></div>
-                    </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar progress-current" id="progress21" style="width: 0%"></div>
                 </div>
 
             </div>
@@ -303,14 +268,8 @@
                     </div>
                 </div>
 
-                <div class="progress-section">
-                    <div class="progress-info">
-                        <span>Term Progress</span>
-                        <span>100% (Ended Early)</span>
-                    </div>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar progress-completed" style="width: 100%">100%</div>
-                    </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar progress-completed" style="width: 100%">100%</div>
                 </div>
 
             </div>
@@ -329,15 +288,6 @@
             const end21 = new Date('2029-09-30'); // Expected end (approximate)
             const now = new Date();
 
-            // Update current date display
-            document.getElementById('currentDate').textContent =
-                'Today: ' + now.toLocaleDateString('en-GB', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-
             // Calculate 21st Bundestag progress
             const totalDays21 = (end21 - start21) / (1000 * 60 * 60 * 24);
             const elapsedDays21 = Math.max(0, (now - start21) / (1000 * 60 * 60 * 24));
@@ -345,11 +295,8 @@
 
             // Update UI
             const progressBar = document.getElementById('progress21');
-            const progressText = document.getElementById('progress21-text');
-
             progressBar.style.width = progress21.toFixed(1) + '%';
             progressBar.textContent = progress21.toFixed(1) + '%';
-            progressText.textContent = progress21.toFixed(1) + '% completed';
         }
 
         // Initial update
