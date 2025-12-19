@@ -15,6 +15,21 @@
             --text-light: #666666;
             --dissolved: #E53935;
             --current: #2196F3;
+            --date-item-bg: #f8f9fa;
+            --shadow: rgba(0,0,0,0.1);
+            --progress-bg: #e0e0e0;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #1a1a1a;
+                --card-bg: #2d2d2d;
+                --text: #e0e0e0;
+                --text-light: #a0a0a0;
+                --date-item-bg: #3a3a3a;
+                --shadow: rgba(0,0,0,0.3);
+                --progress-bg: #4a4a4a;
+            }
         }
 
         * {
@@ -70,7 +85,7 @@
         .bundestag-card {
             background: var(--card-bg);
             border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px var(--shadow);
             margin-bottom: 1.5rem;
             overflow: hidden;
         }
@@ -144,7 +159,7 @@
         }
 
         .progress-bar-container {
-            background: #e0e0e0;
+            background: var(--progress-bg);
             border-radius: 10px;
             height: 24px;
             overflow: hidden;
@@ -183,7 +198,7 @@
         .date-item {
             text-align: center;
             padding: 0.75rem;
-            background: #f8f9fa;
+            background: var(--date-item-bg);
             border-radius: 8px;
         }
 
