@@ -257,6 +257,22 @@
             text-decoration: underline;
         }
 
+        .site-nav {
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .site-nav a {
+            color: var(--text-light);
+            text-decoration: none;
+        }
+
+        .site-nav a:hover {
+            text-decoration: underline;
+        }
+
         a:focus-visible {
             outline: 3px solid var(--current);
             outline-offset: 2px;
@@ -344,6 +360,10 @@
         <p>Daten basierend auf offiziellen Bundestag-Informationen</p>
         <p>Quellen: <a href="https://www.bundestag.de" target="_blank" rel="noopener">bundestag.de</a> | <a href="https://de.wikipedia.org/wiki/Bundestag" target="_blank" rel="noopener">Wikipedia</a></p>
     </footer>
+
+    <nav class="site-nav">
+        <a href="/">← Alle Tools</a> | <a href="https://github.com/flokoe/tools/blob/main/bundestag-fortschritt.html" target="_blank" rel="noopener">Quellcode</a>
+    </nav>
 
     <script>
         // Calculate and update progress for 21st Bundestag
