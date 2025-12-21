@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMARC Report Analyzer</title>
+    <meta name="description" content="Analyze DMARC aggregate reports from XML, ZIP, GZ, or TAR.GZ files. Drag and drop to get instant insights.">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="DMARC Report Analyzer">
+    <meta property="og:description" content="Analyze DMARC aggregate reports from XML, ZIP, GZ, or TAR.GZ files.">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="DMARC Report Analyzer">
+    <meta name="twitter:description" content="Analyze DMARC aggregate reports from XML, ZIP, GZ, or TAR.GZ files.">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-color: #f5f5f5;
+            --text-color: #333;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --primary-color: #2563eb;
+            --success-color: #16a34a;
+            --warning-color: #ca8a04;
+            --error-color: #dc2626;
+            --muted-color: #6b7280;
+            --drop-zone-bg: #eff6ff;
+            --drop-zone-border: #2563eb;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1a1a1a;
+                --text-color: #e5e5e5;
+                --card-bg: #262626;
+                --border-color: #404040;
+                --drop-zone-bg: #1e3a5f;
+                --muted-color: #9ca3af;
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--muted-color);
+            margin-bottom: 2rem;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--card-bg);
+            margin-bottom: 2rem;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.drag-over {
+            border-color: var(--drop-zone-border);
+            background: var(--drop-zone-bg);
+        }
+
+        .drop-zone-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .drop-zone-text {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .drop-zone-hint {
+            color: var(--muted-color);
+            font-size: 0.9rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.visible {
+            display: block;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .summary-card-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .summary-card-label {
+            color: var(--muted-color);
+            font-size: 0.85rem;
+        }
+
+        .summary-card.pass .summary-card-value {
+            color: var(--success-color);
+        }
+
+        .summary-card.fail .summary-card-value {
+            color: var(--error-color);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .report-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .meta-label {
+            color: var(--muted-color);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .meta-value {
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        .records-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .records-table th,
+        .records-table td {
+            padding: 0.75rem 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .records-table th {
+            font-weight: 600;
+            color: var(--muted-color);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .records-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-pass {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-fail {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-none {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .badge-pass {
+                background: #14532d;
+                color: #86efac;
+            }
+
+            .badge-fail {
+                background: #7f1d1d;
+                color: #fca5a5;
+            }
+
+            .badge-none {
+                background: #374151;
+                color: #9ca3af;
+            }
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .error-message {
+                background: #7f1d1d;
+                color: #fca5a5;
+            }
+        }
+
+        .clear-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .clear-btn:hover {
+            background: var(--border-color);
+        }
+
+        .report-separator {
+            border: none;
+            border-top: 2px dashed var(--border-color);
+            margin: 2rem 0;
+        }
+
+        .ip-lookup {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .ip-lookup:hover {
+            text-decoration: underline;
+        }
+
+        .site-nav {
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            color: var(--muted-color);
+        }
+
+        .site-nav a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .site-nav a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--muted-color);
+        }
+
+        .policy-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .policy-tag {
+            background: var(--border-color);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DMARC Report Analyzer</h1>
+        <p class="subtitle">Drag and drop DMARC reports (XML, ZIP, GZ, TAR.GZ)</p>
+
+        <div class="drop-zone" id="dropZone">
+            <div class="drop-zone-icon">📧</div>
+            <div class="drop-zone-text">Drop DMARC report files here</div>
+            <div class="drop-zone-hint">or click to select files</div>
+            <input type="file" class="file-input" id="fileInput" multiple accept=".xml,.zip,.gz,.tar.gz">
+        </div>
+
+        <div id="error" class="error-message" style="display: none;"></div>
+
+        <div class="results" id="results">
+            <div class="summary-cards" id="summaryCards"></div>
+            <div id="reportsContainer"></div>
+        </div>
+
+        <nav class="site-nav">
+            <a href="/">← All Tools</a> | <a href="https://github.com/flokoe/tools/blob/main/dmarc-analyzer.html" target="_blank" rel="noopener">Source</a>
+        </nav>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const results = document.getElementById('results');
+        const summaryCards = document.getElementById('summaryCards');
+        const reportsContainer = document.getElementById('reportsContainer');
+        const errorDiv = document.getElementById('error');
+
+        let allReports = [];
+
+        // Event listeners
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        async function handleFiles(files) {
+            errorDiv.style.display = 'none';
+            allReports = [];
+
+            try {
+                for (const file of files) {
+                    const xmlContents = await extractXmlFromFile(file);
+                    for (const xml of xmlContents) {
+                        const report = parseDmarcReport(xml);
+                        if (report) {
+                            allReports.push(report);
+                        }
+                    }
+                }
+
+                if (allReports.length === 0) {
+                    throw new Error('No valid DMARC reports found in the uploaded files.');
+                }
+
+                displayResults();
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
+        async function extractXmlFromFile(file) {
+            const name = file.name.toLowerCase();
+            const arrayBuffer = await file.arrayBuffer();
+
+            if (name.endsWith('.xml')) {
+                return [new TextDecoder().decode(arrayBuffer)];
+            }
+
+            if (name.endsWith('.zip')) {
+                return await extractFromZip(arrayBuffer);
+            }
+
+            if (name.endsWith('.gz') && !name.endsWith('.tar.gz')) {
+                const decompressed = pako.inflate(new Uint8Array(arrayBuffer));
+                return [new TextDecoder().decode(decompressed)];
+            }
+
+            if (name.endsWith('.tar.gz') || name.endsWith('.tgz')) {
+                return await extractFromTarGz(arrayBuffer);
+            }
+
+            throw new Error(`Unsupported file format: ${file.name}`);
+        }
+
+        async function extractFromZip(arrayBuffer) {
+            const zip = await JSZip.loadAsync(arrayBuffer);
+            const xmlContents = [];
+
+            for (const [filename, zipEntry] of Object.entries(zip.files)) {
+                if (filename.toLowerCase().endsWith('.xml') && !zipEntry.dir) {
+                    const content = await zipEntry.async('string');
+                    xmlContents.push(content);
+                }
+            }
+
+            return xmlContents;
+        }
+
+        async function extractFromTarGz(arrayBuffer) {
+            const decompressed = pako.inflate(new Uint8Array(arrayBuffer));
+            return parseTar(decompressed.buffer);
+        }
+
+        function parseTar(arrayBuffer) {
+            const xmlContents = [];
+            const uint8 = new Uint8Array(arrayBuffer);
+            let offset = 0;
+
+            while (offset < uint8.length - 512) {
+                // Read header
+                const header = uint8.slice(offset, offset + 512);
+
+                // Check for empty block (end of archive)
+                if (header.every(b => b === 0)) break;
+
+                // Get filename (first 100 bytes)
+                const nameBytes = header.slice(0, 100);
+                const nameEnd = nameBytes.indexOf(0);
+                const filename = new TextDecoder().decode(nameBytes.slice(0, nameEnd > 0 ? nameEnd : 100));
+
+                // Get file size (bytes 124-136, octal)
+                const sizeStr = new TextDecoder().decode(header.slice(124, 136)).trim();
+                const fileSize = parseInt(sizeStr, 8) || 0;
+
+                offset += 512;
+
+                if (fileSize > 0 && filename.toLowerCase().endsWith('.xml')) {
+                    const content = new TextDecoder().decode(uint8.slice(offset, offset + fileSize));
+                    xmlContents.push(content);
+                }
+
+                // Move to next file (512-byte aligned)
+                offset += Math.ceil(fileSize / 512) * 512;
+            }
+
+            return xmlContents;
+        }
+
+        function parseDmarcReport(xml) {
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(xml, 'text/xml');
+
+                const parseError = doc.querySelector('parsererror');
+                if (parseError) return null;
+
+                const feedback = doc.querySelector('feedback');
+                if (!feedback) return null;
+
+                const getText = (parent, selector) => {
+                    const el = parent.querySelector(selector);
+                    return el ? el.textContent.trim() : '';
+                };
+
+                const report = {
+                    metadata: {
+                        orgName: getText(feedback, 'report_metadata > org_name'),
+                        email: getText(feedback, 'report_metadata > email'),
+                        reportId: getText(feedback, 'report_metadata > report_id'),
+                        dateBegin: getText(feedback, 'report_metadata > date_range > begin'),
+                        dateEnd: getText(feedback, 'report_metadata > date_range > end'),
+                    },
+                    policy: {
+                        domain: getText(feedback, 'policy_published > domain'),
+                        adkim: getText(feedback, 'policy_published > adkim'),
+                        aspf: getText(feedback, 'policy_published > aspf'),
+                        p: getText(feedback, 'policy_published > p'),
+                        sp: getText(feedback, 'policy_published > sp'),
+                        pct: getText(feedback, 'policy_published > pct'),
+                    },
+                    records: []
+                };
+
+                feedback.querySelectorAll('record').forEach(record => {
+                    const row = record.querySelector('row');
+                    const identifiers = record.querySelector('identifiers');
+                    const authResults = record.querySelector('auth_results');
+
+                    const rec = {
+                        sourceIp: getText(row, 'source_ip'),
+                        count: parseInt(getText(row, 'count')) || 0,
+                        disposition: getText(row, 'policy_evaluated > disposition'),
+                        dkim: getText(row, 'policy_evaluated > dkim'),
+                        spf: getText(row, 'policy_evaluated > spf'),
+                        headerFrom: getText(identifiers, 'header_from'),
+                        envelopeFrom: getText(identifiers, 'envelope_from'),
+                        envelopeTo: getText(identifiers, 'envelope_to'),
+                        dkimResults: [],
+                        spfResults: []
+                    };
+
+                    if (authResults) {
+                        authResults.querySelectorAll('dkim').forEach(dkim => {
+                            rec.dkimResults.push({
+                                domain: getText(dkim, 'domain'),
+                                selector: getText(dkim, 'selector'),
+                                result: getText(dkim, 'result')
+                            });
+                        });
+
+                        authResults.querySelectorAll('spf').forEach(spf => {
+                            rec.spfResults.push({
+                                domain: getText(spf, 'domain'),
+                                scope: getText(spf, 'scope'),
+                                result: getText(spf, 'result')
+                            });
+                        });
+                    }
+
+                    report.records.push(rec);
+                });
+
+                return report;
+            } catch (e) {
+                console.error('Error parsing report:', e);
+                return null;
+            }
+        }
+
+        function formatDate(timestamp) {
+            if (!timestamp) return 'N/A';
+            const date = new Date(parseInt(timestamp) * 1000);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
+
+        function displayResults() {
+            results.classList.add('visible');
+
+            // Calculate totals
+            let totalMessages = 0;
+            let passedMessages = 0;
+            let failedMessages = 0;
+            let uniqueIps = new Set();
+
+            allReports.forEach(report => {
+                report.records.forEach(record => {
+                    totalMessages += record.count;
+                    if (record.dkim === 'pass' && record.spf === 'pass') {
+                        passedMessages += record.count;
+                    } else {
+                        failedMessages += record.count;
+                    }
+                    uniqueIps.add(record.sourceIp);
+                });
+            });
+
+            // Display summary
+            summaryCards.innerHTML = `
+                <div class="summary-card">
+                    <div class="summary-card-value">${allReports.length}</div>
+                    <div class="summary-card-label">Reports</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-card-value">${totalMessages.toLocaleString()}</div>
+                    <div class="summary-card-label">Total Messages</div>
+                </div>
+                <div class="summary-card pass">
+                    <div class="summary-card-value">${passedMessages.toLocaleString()}</div>
+                    <div class="summary-card-label">Passed</div>
+                </div>
+                <div class="summary-card fail">
+                    <div class="summary-card-value">${failedMessages.toLocaleString()}</div>
+                    <div class="summary-card-label">Failed</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-card-value">${uniqueIps.size}</div>
+                    <div class="summary-card-label">Unique IPs</div>
+                </div>
+            `;
+
+            // Display individual reports
+            reportsContainer.innerHTML = allReports.map((report, index) => `
+                ${index > 0 ? '<hr class="report-separator">' : ''}
+                <div class="card">
+                    <div class="card-header">
+                        <span>Report: ${escapeHtml(report.metadata.orgName || 'Unknown')}</span>
+                        <button class="clear-btn" onclick="clearResults()">Clear All</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">Organization</span>
+                                <span class="meta-value">${escapeHtml(report.metadata.orgName)}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Report ID</span>
+                                <span class="meta-value">${escapeHtml(report.metadata.reportId)}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Date Range</span>
+                                <span class="meta-value">${formatDate(report.metadata.dateBegin)} - ${formatDate(report.metadata.dateEnd)}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Domain</span>
+                                <span class="meta-value">${escapeHtml(report.policy.domain)}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Policy</span>
+                                <span class="meta-value">
+                                    p=${escapeHtml(report.policy.p || 'none')}
+                                    <div class="policy-info">
+                                        <span class="policy-tag">DKIM: ${escapeHtml(report.policy.adkim || 'r')}</span>
+                                        <span class="policy-tag">SPF: ${escapeHtml(report.policy.aspf || 'r')}</span>
+                                        ${report.policy.pct ? `<span class="policy-tag">pct: ${escapeHtml(report.policy.pct)}%</span>` : ''}
+                                    </div>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">Records (${report.records.length})</div>
+                    <div class="card-body">
+                        <div class="table-wrapper">
+                            <table class="records-table">
+                                <thead>
+                                    <tr>
+                                        <th>Source IP</th>
+                                        <th>Count</th>
+                                        <th>Disposition</th>
+                                        <th>DKIM</th>
+                                        <th>SPF</th>
+                                        <th>Header From</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${report.records.map(record => `
+                                        <tr>
+                                            <td>
+                                                <a href="https://who.is/whois-ip/ip-address/${escapeHtml(record.sourceIp)}"
+                                                   target="_blank" rel="noopener" class="ip-lookup"
+                                                   title="Lookup IP">
+                                                    ${escapeHtml(record.sourceIp)}
+                                                </a>
+                                            </td>
+                                            <td>${record.count.toLocaleString()}</td>
+                                            <td>${escapeHtml(record.disposition)}</td>
+                                            <td><span class="badge badge-${record.dkim === 'pass' ? 'pass' : 'fail'}">${escapeHtml(record.dkim)}</span></td>
+                                            <td><span class="badge badge-${record.spf === 'pass' ? 'pass' : 'fail'}">${escapeHtml(record.spf)}</span></td>
+                                            <td>${escapeHtml(record.headerFrom)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            results.classList.remove('visible');
+        }
+
+        function clearResults() {
+            allReports = [];
+            results.classList.remove('visible');
+            summaryCards.innerHTML = '';
+            reportsContainer.innerHTML = '';
+            fileInput.value = '';
+        }
+    </script>
+</body>
+</html>
