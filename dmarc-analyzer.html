@@ -174,6 +174,45 @@
             align-items: center;
         }
 
+        .card-header.collapsible {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .card-header.collapsible:hover {
+            background: var(--border-color);
+        }
+
+        .card-header.collapsible:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: -2px;
+        }
+
+        .card-header.collapsible:focus:not(:focus-visible) {
+            outline: none;
+        }
+
+        .card-header.collapsible:focus-visible {
+            outline: 2px solid var(--primary-color);
+            outline-offset: -2px;
+        }
+
+        .toggle-icon {
+            font-size: 1.2rem;
+        }
+
+        .toggle-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .collapsible-content {
+            overflow: hidden;
+        }
+
+        .collapsible-content.collapsed {
+            display: none;
+        }
+
         .card-body {
             padding: 1rem;
         }
@@ -708,39 +747,50 @@
                 </div>
 
                 <div class="card">
-                    <div class="card-header">Records (${report.records.length})</div>
-                    <div class="card-body">
-                        <div class="table-wrapper">
-                            <table class="records-table">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Source IP</th>
-                                        <th scope="col">Count</th>
-                                        <th scope="col">Disposition</th>
-                                        <th scope="col">DKIM</th>
-                                        <th scope="col">SPF</th>
-                                        <th scope="col">Header From</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${report.records.map(record => `
+                    <div class="card-header collapsible"
+                         role="button"
+                         tabindex="0"
+                         aria-expanded="false"
+                         aria-controls="records-${index}"
+                         onclick="toggleRecords(${index})"
+                         onkeydown="handleKeyDown(event, ${index})">
+                        <span>Records (${report.records.length})</span>
+                        <span class="toggle-icon collapsed" id="toggle-${index}" aria-hidden="true">▼</span>
+                    </div>
+                    <div class="collapsible-content collapsed" id="records-${index}" aria-hidden="true">
+                        <div class="card-body">
+                            <div class="table-wrapper">
+                                <table class="records-table">
+                                    <thead>
                                         <tr>
-                                            <td>
-                                                <a href="https://who.is/whois-ip/ip-address/${escapeHtml(record.sourceIp)}"
-                                                   target="_blank" rel="noopener" class="ip-lookup"
-                                                   title="Lookup IP">
-                                                    ${escapeHtml(record.sourceIp)}
-                                                </a>
-                                            </td>
-                                            <td>${record.count.toLocaleString()}</td>
-                                            <td>${escapeHtml(record.disposition)}</td>
-                                            <td><span class="badge badge-${record.dkim === 'pass' ? 'pass' : 'fail'}">${escapeHtml(record.dkim)}</span></td>
-                                            <td><span class="badge badge-${record.spf === 'pass' ? 'pass' : 'fail'}">${escapeHtml(record.spf)}</span></td>
-                                            <td>${escapeHtml(record.headerFrom)}</td>
+                                            <th scope="col">Source IP</th>
+                                            <th scope="col">Count</th>
+                                            <th scope="col">Disposition</th>
+                                            <th scope="col">DKIM</th>
+                                            <th scope="col">SPF</th>
+                                            <th scope="col">Header From</th>
                                         </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        ${report.records.map(record => `
+                                            <tr>
+                                                <td>
+                                                    <a href="https://who.is/whois-ip/ip-address/${escapeHtml(record.sourceIp)}"
+                                                       target="_blank" rel="noopener" class="ip-lookup"
+                                                       title="Lookup IP">
+                                                        ${escapeHtml(record.sourceIp)}
+                                                    </a>
+                                                </td>
+                                                <td>${record.count.toLocaleString()}</td>
+                                                <td>${escapeHtml(record.disposition)}</td>
+                                                <td><span class="badge badge-${record.dkim === 'pass' ? 'pass' : 'fail'}">${escapeHtml(record.dkim)}</span></td>
+                                                <td><span class="badge badge-${record.spf === 'pass' ? 'pass' : 'fail'}">${escapeHtml(record.spf)}</span></td>
+                                                <td>${escapeHtml(record.headerFrom)}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -766,6 +816,29 @@
             summaryCards.innerHTML = '';
             reportsContainer.innerHTML = '';
             fileInput.value = '';
+        }
+
+        function toggleRecords(index) {
+            const content = document.getElementById(`records-${index}`);
+            const icon = document.getElementById(`toggle-${index}`);
+            const header = icon.parentElement;
+
+            const isCollapsed = content.classList.contains('collapsed');
+
+            content.classList.toggle('collapsed');
+            icon.classList.toggle('collapsed');
+
+            // Update ARIA attributes
+            header.setAttribute('aria-expanded', isCollapsed ? 'true' : 'false');
+            content.setAttribute('aria-hidden', isCollapsed ? 'false' : 'true');
+        }
+
+        function handleKeyDown(event, index) {
+            // Allow Enter or Space to toggle
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                toggleRecords(index);
+            }
         }
     </script>
 </body>
