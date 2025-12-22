@@ -16,8 +16,8 @@
     <meta name="twitter:title" content="DMARC Report Analyzer">
     <meta name="twitter:description" content="Analyze DMARC aggregate reports from XML, ZIP, GZ, or TAR.GZ files.">
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js" integrity="sha512-g2TeAWw5GPnX7z0Kn8nFbYfeHcvAu/tx6d6mrLe/90mkCxO+RcptyYpksUz35EO337F83bZwcmUyHiHamspkfg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <style>
         * {
@@ -348,6 +348,18 @@
             border-radius: 4px;
             font-size: 0.8rem;
         }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .results-header-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -355,16 +367,22 @@
         <h1>DMARC Report Analyzer</h1>
         <p class="subtitle">Drag and drop DMARC reports (XML, ZIP, GZ, TAR.GZ)</p>
 
-        <div class="drop-zone" id="dropZone">
+        <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="Drop DMARC report files here or click to select">
             <div class="drop-zone-icon">📧</div>
             <div class="drop-zone-text">Drop DMARC report files here</div>
             <div class="drop-zone-hint">or click to select files</div>
             <input type="file" class="file-input" id="fileInput" multiple accept=".xml,.zip,.gz,.tar.gz">
         </div>
 
+        <div class="loading" id="loading" style="display: none;">Processing files...</div>
+
         <div id="error" class="error-message" style="display: none;"></div>
 
         <div class="results" id="results">
+            <div class="results-header">
+                <span class="results-header-title">Analysis Results</span>
+                <button class="clear-btn" onclick="clearResults()">Clear All</button>
+            </div>
             <div class="summary-cards" id="summaryCards"></div>
             <div id="reportsContainer"></div>
         </div>
@@ -406,8 +424,17 @@
             handleFiles(e.target.files);
         });
 
+        dropZone.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInput.click();
+            }
+        });
+
         async function handleFiles(files) {
+            const loadingDiv = document.getElementById('loading');
             errorDiv.style.display = 'none';
+            loadingDiv.style.display = 'block';
             allReports = [];
 
             try {
@@ -426,7 +453,10 @@
                 }
 
                 displayResults();
+                loadingDiv.style.display = 'none';
+                fileInput.value = '';
             } catch (err) {
+                loadingDiv.style.display = 'none';
                 showError(err.message);
             }
         }
@@ -617,6 +647,8 @@
                 });
             });
 
+            const passRate = totalMessages > 0 ? ((passedMessages / totalMessages) * 100).toFixed(1) : '0.0';
+
             // Display summary
             summaryCards.innerHTML = `
                 <div class="summary-card">
@@ -630,6 +662,10 @@
                 <div class="summary-card pass">
                     <div class="summary-card-value">${passedMessages.toLocaleString()}</div>
                     <div class="summary-card-label">Passed</div>
+                </div>
+                <div class="summary-card pass">
+                    <div class="summary-card-value">${passRate}%</div>
+                    <div class="summary-card-label">Pass Rate</div>
                 </div>
                 <div class="summary-card fail">
                     <div class="summary-card-value">${failedMessages.toLocaleString()}</div>
@@ -646,8 +682,7 @@
                 ${index > 0 ? '<hr class="report-separator">' : ''}
                 <div class="card">
                     <div class="card-header">
-                        <span>Report: ${escapeHtml(report.metadata.orgName || 'Unknown')}</span>
-                        <button class="clear-btn" onclick="clearResults()">Clear All</button>
+                        Report: ${escapeHtml(report.metadata.orgName || 'Unknown')}
                     </div>
                     <div class="card-body">
                         <div class="report-meta">
@@ -689,12 +724,12 @@
                             <table class="records-table">
                                 <thead>
                                     <tr>
-                                        <th>Source IP</th>
-                                        <th>Count</th>
-                                        <th>Disposition</th>
-                                        <th>DKIM</th>
-                                        <th>SPF</th>
-                                        <th>Header From</th>
+                                        <th scope="col">Source IP</th>
+                                        <th scope="col">Count</th>
+                                        <th scope="col">Disposition</th>
+                                        <th scope="col">DKIM</th>
+                                        <th scope="col">SPF</th>
+                                        <th scope="col">Header From</th>
                                     </tr>
                                 </thead>
                                 <tbody>
