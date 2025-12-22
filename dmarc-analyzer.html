@@ -122,10 +122,11 @@
         }
 
         .summary-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            display: flex;
+            flex-wrap: nowrap;
             gap: 1rem;
             margin-bottom: 2rem;
+            overflow-x: auto;
         }
 
         .summary-card {
@@ -134,6 +135,8 @@
             padding: 1rem;
             text-align: center;
             border: 1px solid var(--border-color);
+            flex: 1 1 140px;
+            min-width: 140px;
         }
 
         .summary-card-value {
@@ -623,7 +626,7 @@
         function formatDate(timestamp) {
             if (!timestamp) return 'N/A';
             const date = new Date(parseInt(timestamp) * 1000);
-            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            return date.toLocaleDateString();
         }
 
         function displayResults() {
@@ -660,10 +663,6 @@
                     <div class="summary-card-label">Total Messages</div>
                 </div>
                 <div class="summary-card pass">
-                    <div class="summary-card-value">${passedMessages.toLocaleString()}</div>
-                    <div class="summary-card-label">Passed</div>
-                </div>
-                <div class="summary-card pass">
                     <div class="summary-card-value">${passRate}%</div>
                     <div class="summary-card-label">Pass Rate</div>
                 </div>
@@ -682,26 +681,17 @@
                 ${index > 0 ? '<hr class="report-separator">' : ''}
                 <div class="card">
                     <div class="card-header">
-                        Report: ${escapeHtml(report.metadata.orgName || 'Unknown')}
+                        <div>
+                            <div style="font-weight: 600; margin-bottom: 0.25rem;">
+                                ${escapeHtml(report.metadata.orgName || 'Unknown')} - ${escapeHtml(report.policy.domain)}
+                            </div>
+                            <div style="font-size: 0.85rem; font-weight: 400; opacity: 0.8;">
+                                <strong>Report Period:</strong> ${formatDate(report.metadata.dateBegin)} - ${formatDate(report.metadata.dateEnd)} • <strong>Report ID:</strong> ${escapeHtml(report.metadata.reportId)}
+                            </div>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="report-meta">
-                            <div class="meta-item">
-                                <span class="meta-label">Organization</span>
-                                <span class="meta-value">${escapeHtml(report.metadata.orgName)}</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">Report ID</span>
-                                <span class="meta-value">${escapeHtml(report.metadata.reportId)}</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">Date Range</span>
-                                <span class="meta-value">${formatDate(report.metadata.dateBegin)} - ${formatDate(report.metadata.dateEnd)}</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">Domain</span>
-                                <span class="meta-value">${escapeHtml(report.policy.domain)}</span>
-                            </div>
                             <div class="meta-item">
                                 <span class="meta-label">Policy</span>
                                 <span class="meta-value">
