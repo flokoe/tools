@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Running Interval Timer</title>
+    <meta name="description" content="A self-contained running interval timer with warmup, run/walk repetitions, audio cues, and persistent settings.">
+
+    <style>
+        :root {
+            --bg: #f7f5f1;
+            --surface: #ffffff;
+            --surface-soft: #f0f4f3;
+            --text: #18211f;
+            --muted: #62706b;
+            --border: #d7dedb;
+            --run: #0b7a75;
+            --walk: #2c64a7;
+            --warmup: #ad5f18;
+            --danger: #b42318;
+            --focus: #1d84c6;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #141917;
+                --surface: #1d2421;
+                --surface-soft: #242d29;
+                --text: #ecf1ef;
+                --muted: #a7b3af;
+                --border: #35413d;
+                --run: #42b8ad;
+                --walk: #77a9e8;
+                --warmup: #e19a54;
+                --danger: #ff7a70;
+                --focus: #7ec8ff;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0) 320px),
+                var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.34;
+            background-image:
+                linear-gradient(rgba(24, 33, 31, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(24, 33, 31, 0.04) 1px, transparent 1px);
+            background-size: 44px 44px;
+            mask-image: linear-gradient(180deg, #000 0, transparent 70%);
+        }
+
+        a {
+            color: inherit;
+        }
+
+        button {
+            font: inherit;
+        }
+
+        button {
+            border: 0;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.56;
+        }
+
+        button:focus-visible {
+            outline: 3px solid color-mix(in srgb, var(--focus), transparent 55%);
+            outline-offset: 2px;
+        }
+
+        .page {
+            position: relative;
+            width: min(100% - 1rem, 1120px);
+            min-height: 100vh;
+            margin: 0 auto;
+            padding: 0.5rem 0 1rem;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.25rem 0 0.75rem;
+        }
+
+        .back-link {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.92rem;
+        }
+
+        .back-link:hover {
+            color: var(--text);
+            text-decoration: underline;
+        }
+
+        .app {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            align-items: stretch;
+        }
+
+        .timer-surface,
+        .settings-surface {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 22px rgba(24, 33, 31, 0.08);
+        }
+
+        .timer-surface {
+            min-height: calc(100svh - 9rem);
+            border-radius: 8px;
+            padding: 1rem;
+            display: grid;
+            grid-template-rows: auto 1fr auto auto;
+            gap: 0.85rem;
+        }
+
+        .settings-surface {
+            border-radius: 8px;
+            padding: 0;
+            align-self: start;
+            overflow: hidden;
+        }
+
+        .title-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        h1,
+        h2 {
+            margin: 0;
+            letter-spacing: 0;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            line-height: 1.1;
+        }
+
+        h2 {
+            font-size: 1rem;
+            line-height: 1.2;
+        }
+
+        .subtitle,
+        .status-note,
+        .small-label {
+            color: var(--muted);
+        }
+
+        .subtitle {
+            display: none;
+            margin: 0.35rem 0 0;
+            max-width: 48rem;
+        }
+
+        .phase-pill {
+            flex: 0 0 auto;
+            min-width: 6.25rem;
+            border-radius: 999px;
+            padding: 0.42rem 0.7rem;
+            text-align: center;
+            font-weight: 750;
+            color: #fff;
+            background: var(--warmup);
+            font-size: 0.86rem;
+        }
+
+        .phase-pill.run {
+            background: var(--run);
+        }
+
+        .phase-pill.walk {
+            background: var(--walk);
+        }
+
+        .phase-pill.done {
+            background: #50605b;
+        }
+
+        .clock-wrap {
+            display: grid;
+            place-items: center;
+            min-height: min(50svh, 430px);
+        }
+
+        .clock {
+            position: relative;
+            width: min(100%, 420px);
+            aspect-ratio: 1;
+            display: grid;
+            place-items: center;
+        }
+
+        .progress-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background:
+                conic-gradient(var(--phase-color, var(--warmup)) var(--progress, 0deg), var(--surface-soft) 0deg);
+        }
+
+        .progress-ring::after {
+            content: "";
+            position: absolute;
+            inset: 14px;
+            border-radius: 50%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+        }
+
+        .clock-content {
+            position: relative;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .phase-name {
+            margin: 0 0 0.4rem;
+            color: var(--muted);
+            font-weight: 750;
+            text-transform: uppercase;
+            font-size: 0.92rem;
+            letter-spacing: 0.08em;
+        }
+
+        .time {
+            font-variant-numeric: tabular-nums;
+            font-size: clamp(4.6rem, 24vw, 7.2rem);
+            line-height: 0.9;
+            font-weight: 850;
+            letter-spacing: 0;
+        }
+
+        .rep-line {
+            margin-top: 0.85rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .status-note {
+            margin-top: 0.25rem;
+            min-height: 1.5rem;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 0.55rem;
+            align-items: stretch;
+        }
+
+        .primary-button,
+        .danger-button {
+            min-height: 52px;
+            border-radius: 8px;
+            padding: 0.7rem 1rem;
+            font-weight: 750;
+            white-space: nowrap;
+        }
+
+        .primary-button {
+            min-height: 64px;
+            font-size: 1.2rem;
+            background: var(--run);
+            color: #fff;
+        }
+
+        .danger-button {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid color-mix(in srgb, var(--danger), transparent 55%);
+        }
+
+        .danger-button {
+            min-width: 72px;
+            padding-inline: 0.75rem;
+        }
+
+        .settings-surface summary {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 0.75rem;
+            align-items: center;
+            list-style: none;
+            min-height: 64px;
+            padding: 0.85rem 1rem;
+            cursor: pointer;
+        }
+
+        .settings-surface summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .settings-surface summary::after {
+            content: "Edit";
+            min-width: 4.5rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.45rem 0.7rem;
+            background: var(--surface-soft);
+            color: var(--text);
+            text-align: center;
+            font-weight: 750;
+        }
+
+        .settings-surface[open] summary::after {
+            content: "Close";
+        }
+
+        .summary-inline {
+            display: block;
+            margin-top: 0.15rem;
+            color: var(--muted);
+            font-size: 0.88rem;
+            font-weight: 500;
+        }
+
+        .settings-content {
+            padding: 0 1rem 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .plan-controls {
+            display: grid;
+            padding-top: 1rem;
+            gap: 0.75rem;
+        }
+
+        .plan-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+            align-items: stretch;
+            min-width: 0;
+            min-height: 64px;
+            padding: 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface-soft);
+        }
+
+        .plan-label {
+            font-weight: 800;
+        }
+
+        .stepper {
+            display: grid;
+            grid-template-columns: minmax(48px, 0.7fr) minmax(4.75rem, 1fr) minmax(48px, 0.7fr);
+            gap: 0.45rem;
+            align-items: center;
+            min-width: 0;
+        }
+
+        .step-button {
+            width: 100%;
+            min-width: 0;
+            min-height: 56px;
+            border-radius: 8px;
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            font-size: 1.5rem;
+            font-weight: 850;
+            line-height: 1;
+        }
+
+        .step-value {
+            min-width: 0;
+            min-height: 56px;
+            display: grid;
+            place-items: center;
+            border-radius: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            font-size: 1.25rem;
+            font-weight: 850;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timeline {
+            margin-top: 1rem;
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .timeline-row {
+            display: grid;
+            grid-template-columns: 4.3rem 1fr;
+            gap: 0.55rem;
+            align-items: center;
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+
+        .timeline-row.current {
+            color: var(--text);
+            font-weight: 800;
+        }
+
+        .track {
+            height: 10px;
+            display: grid;
+            grid-template-columns: var(--run-fr, 1fr) var(--walk-fr, 1fr);
+            overflow: hidden;
+            border-radius: 999px;
+            background: var(--surface-soft);
+        }
+
+        .track span:first-child {
+            background: var(--run);
+        }
+
+        .track span:last-child {
+            background: var(--walk);
+        }
+
+        .timeline-row.complete .track {
+            opacity: 0.45;
+        }
+
+        .summary {
+            border-top: 1px solid var(--border);
+            margin-top: 1rem;
+            padding-top: 1rem;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .summary strong {
+            color: var(--text);
+        }
+
+        @media (max-width: 860px) {
+            .save-status {
+                display: none;
+            }
+        }
+
+        @media (min-width: 720px) {
+            .page {
+                width: min(100% - 2rem, 1120px);
+                padding: 1rem 0 2rem;
+            }
+
+            .timer-surface {
+                padding: 1.5rem;
+            }
+
+            h1 {
+                font-size: clamp(1.7rem, 4vw, 3rem);
+            }
+
+            .subtitle {
+                display: block;
+            }
+
+            .controls {
+                gap: 0.75rem;
+            }
+
+            .danger-button {
+                min-width: 104px;
+            }
+        }
+
+        @media (min-width: 560px) {
+            .plan-row {
+                grid-template-columns: minmax(6rem, 0.7fr) minmax(0, 1.3fr);
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .stepper {
+                grid-template-columns: 56px minmax(5.5rem, 1fr) 56px;
+            }
+        }
+
+        @media (min-width: 980px) {
+            .app {
+                grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+                gap: 1rem;
+            }
+
+            .timer-surface {
+                min-height: calc(100vh - 6rem);
+            }
+
+            .settings-surface {
+                position: sticky;
+                top: 1rem;
+            }
+
+            .settings-surface:not([open]) {
+                align-self: start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <nav class="topbar" aria-label="Tool navigation">
+            <a class="back-link" href="index.html">Back to tools</a>
+            <span class="status-note save-status" id="saveStatus">Settings saved locally</span>
+        </nav>
+
+        <main class="app">
+            <section class="timer-surface" aria-labelledby="appTitle">
+                <div class="title-row">
+                    <div>
+                        <h1 id="appTitle">Running Interval Timer</h1>
+                        <p class="subtitle">Warm up once, then alternate running and walking for the number of reps you choose.</p>
+                    </div>
+                    <div class="phase-pill" id="phasePill">Warmup</div>
+                </div>
+
+                <div class="clock-wrap">
+                    <div class="clock" aria-live="polite" aria-atomic="true">
+                        <div class="progress-ring" id="progressRing"></div>
+                        <div class="clock-content">
+                            <p class="phase-name" id="phaseName">Ready</p>
+                            <div class="time" id="timeRemaining">05:00</div>
+                            <div class="rep-line" id="repLine">Rep 0 of 8</div>
+                            <div class="status-note" id="statusText">Press start when you are ready.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="controls" aria-label="Timer controls">
+                        <button class="primary-button" id="startPauseButton" type="button">Start</button>
+                        <button class="danger-button" id="resetButton" type="button">Reset</button>
+                    </div>
+                </div>
+            </section>
+
+            <details class="settings-surface" aria-labelledby="settingsTitle">
+                <summary>
+                    <div>
+                        <h2 id="settingsTitle">Plan</h2>
+                        <span class="summary-inline" id="planSummaryCompact"></span>
+                    </div>
+                </summary>
+
+                <div class="settings-content">
+                    <div class="plan-controls" id="planControls">
+                        <div class="plan-row">
+                            <div class="plan-label">Warmup</div>
+                            <div class="stepper">
+                                <button class="step-button" type="button" data-adjust="warmupSeconds" data-delta="-60" aria-label="Decrease warmup">-</button>
+                                <div class="step-value" id="warmupValue">05:00</div>
+                                <button class="step-button" type="button" data-adjust="warmupSeconds" data-delta="60" aria-label="Increase warmup">+</button>
+                            </div>
+                        </div>
+
+                        <div class="plan-row">
+                            <div class="plan-label">Run</div>
+                            <div class="stepper">
+                                <button class="step-button" type="button" data-adjust="runSeconds" data-delta="-15" aria-label="Decrease run">-</button>
+                                <div class="step-value" id="runValue">01:00</div>
+                                <button class="step-button" type="button" data-adjust="runSeconds" data-delta="15" aria-label="Increase run">+</button>
+                            </div>
+                        </div>
+
+                        <div class="plan-row">
+                            <div class="plan-label">Walk</div>
+                            <div class="stepper">
+                                <button class="step-button" type="button" data-adjust="walkSeconds" data-delta="-15" aria-label="Decrease walk">-</button>
+                                <div class="step-value" id="walkValue">01:30</div>
+                                <button class="step-button" type="button" data-adjust="walkSeconds" data-delta="15" aria-label="Increase walk">+</button>
+                            </div>
+                        </div>
+
+                        <div class="plan-row">
+                            <div class="plan-label">Reps</div>
+                            <div class="stepper">
+                                <button class="step-button" type="button" data-adjust="reps" data-delta="-1" aria-label="Decrease reps">-</button>
+                                <div class="step-value" id="repsValue">8</div>
+                                <button class="step-button" type="button" data-adjust="reps" data-delta="1" aria-label="Increase reps">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="summary" id="planSummary"></div>
+                    <div class="timeline" id="timeline" aria-label="Repetition timeline"></div>
+                </div>
+            </details>
+        </main>
+    </div>
+
+    <script>
+        const storageKey = "runningIntervalTimerSettings";
+
+        const defaults = {
+            warmupSeconds: 300,
+            runSeconds: 60,
+            walkSeconds: 90,
+            reps: 8
+        };
+
+        const elements = {
+            planControls: document.getElementById("planControls"),
+            warmupValue: document.getElementById("warmupValue"),
+            runValue: document.getElementById("runValue"),
+            walkValue: document.getElementById("walkValue"),
+            repsValue: document.getElementById("repsValue"),
+            startPauseButton: document.getElementById("startPauseButton"),
+            resetButton: document.getElementById("resetButton"),
+            phasePill: document.getElementById("phasePill"),
+            phaseName: document.getElementById("phaseName"),
+            timeRemaining: document.getElementById("timeRemaining"),
+            repLine: document.getElementById("repLine"),
+            statusText: document.getElementById("statusText"),
+            progressRing: document.getElementById("progressRing"),
+            planSummary: document.getElementById("planSummary"),
+            planSummaryCompact: document.getElementById("planSummaryCompact"),
+            timeline: document.getElementById("timeline"),
+            saveStatus: document.getElementById("saveStatus")
+        };
+
+        let settings = loadSettings();
+        let phases = buildPhases(settings);
+        let phaseIndex = 0;
+        let remainingMs = phases[0].duration * 1000;
+        let running = false;
+        let finished = false;
+        let animationFrameId = null;
+        let lastTick = 0;
+        let wakeLock = null;
+        let audioContext = null;
+
+        hydratePlanner(settings);
+        render();
+
+        elements.planControls.addEventListener("click", (event) => {
+            if (!(event.target instanceof Element)) return;
+
+            const button = event.target.closest("[data-adjust]");
+            if (!button) return;
+
+            adjustPlan(button.dataset.adjust, Number.parseInt(button.dataset.delta, 10));
+        });
+
+        elements.startPauseButton.addEventListener("click", () => {
+            if (finished) {
+                resetTimer();
+            }
+
+            if (running) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        });
+
+        elements.resetButton.addEventListener("click", resetTimer);
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible" && running) {
+                lastTick = performance.now();
+            }
+        });
+
+        async function startTimer() {
+            running = true;
+            finished = false;
+            lastTick = performance.now();
+            elements.statusText.textContent = "Timer running.";
+            elements.startPauseButton.textContent = "Pause";
+            animationFrameId = requestAnimationFrame(tick);
+            requestWakeLock();
+
+            playCue("start");
+            vibrate([120]);
+        }
+
+        function pauseTimer() {
+            running = false;
+            cancelTimerFrame();
+            elements.statusText.textContent = "Paused.";
+            elements.startPauseButton.textContent = "Resume";
+            releaseWakeLock();
+        }
+
+        function resetTimer() {
+            running = false;
+            finished = false;
+            cancelTimerFrame();
+            phaseIndex = 0;
+            remainingMs = phases[0].duration * 1000;
+            releaseWakeLock();
+            render();
+            elements.statusText.textContent = "Press start when you are ready.";
+        }
+
+        function tick(now) {
+            if (!running) return;
+
+            const delta = now - lastTick;
+            lastTick = now;
+            remainingMs -= delta;
+            let phaseChanged = false;
+
+            while (remainingMs <= 0 && !finished) {
+                advancePhase(Math.abs(remainingMs));
+                phaseChanged = true;
+            }
+
+            render(phaseChanged);
+
+            if (running && !finished) {
+                animationFrameId = requestAnimationFrame(tick);
+            }
+        }
+
+        function advancePhase(carryMs = 0) {
+            if (phaseIndex < phases.length - 1) {
+                phaseIndex += 1;
+                remainingMs = Math.max(0, phases[phaseIndex].duration * 1000 - carryMs);
+                elements.statusText.textContent = phases[phaseIndex].message;
+                cuePhase(phases[phaseIndex].type);
+            } else {
+                running = false;
+                finished = true;
+                remainingMs = 0;
+                cancelTimerFrame();
+                releaseWakeLock();
+                elements.statusText.textContent = "Workout complete.";
+                elements.startPauseButton.textContent = "Restart";
+                playCue("finish");
+                vibrate([180, 80, 180, 80, 260]);
+            }
+        }
+
+        function cuePhase(type) {
+            if (type === "run") {
+                playCue("run");
+                vibrate([160, 80, 160]);
+            } else if (type === "walk") {
+                playCue("walk");
+                vibrate([220]);
+            }
+        }
+
+        function applySettings(nextSettings) {
+            settings = sanitizeSettings(nextSettings);
+            const saved = saveSettings(settings);
+            phases = buildPhases(settings);
+            phaseIndex = 0;
+            remainingMs = phases[0].duration * 1000;
+            running = false;
+            finished = false;
+            cancelTimerFrame();
+            hydratePlanner(settings);
+            render();
+            elements.statusText.textContent = "Plan applied.";
+            elements.saveStatus.textContent = saved ? "Settings saved locally" : "Settings could not be saved";
+            releaseWakeLock();
+        }
+
+        function adjustPlan(key, delta) {
+            const next = { ...settings };
+            const maximums = {
+                warmupSeconds: 3600,
+                runSeconds: 3600,
+                walkSeconds: 3600,
+                reps: 60
+            };
+
+            next[key] = clampInt(next[key] + delta, key === "reps" ? 1 : 0, maximums[key]);
+
+            if (next.runSeconds === 0 && next.walkSeconds === 0) {
+                if (key === "runSeconds") {
+                    next.walkSeconds = 15;
+                } else if (key === "walkSeconds") {
+                    next.runSeconds = 15;
+                }
+            }
+
+            applySettings(next);
+        }
+
+        function cancelTimerFrame() {
+            if (animationFrameId !== null) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+        }
+
+        function buildPhases(plan) {
+            const nextPhases = [];
+
+            if (plan.warmupSeconds > 0) {
+                nextPhases.push({
+                    type: "warmup",
+                    label: "Warmup",
+                    rep: 0,
+                    duration: plan.warmupSeconds,
+                    message: "Warm up."
+                });
+            }
+
+            for (let rep = 1; rep <= plan.reps; rep += 1) {
+                if (plan.runSeconds > 0) {
+                    nextPhases.push({
+                        type: "run",
+                        label: "Run",
+                        rep,
+                        duration: plan.runSeconds,
+                        message: `Run rep ${rep}.`
+                    });
+                }
+
+                if (plan.walkSeconds > 0) {
+                    nextPhases.push({
+                        type: "walk",
+                        label: "Walk",
+                        rep,
+                        duration: plan.walkSeconds,
+                        message: `Walk rep ${rep}.`
+                    });
+                }
+            }
+
+            return nextPhases.length ? nextPhases : [{ type: "run", label: "Run", rep: 1, duration: 60, message: "Run." }];
+        }
+
+        function render(updatePlan = true) {
+            const phase = phases[phaseIndex];
+            const phaseDurationMs = phase.duration * 1000;
+            const clampedRemainingMs = Math.max(0, remainingMs);
+            const elapsedInPhaseMs = Math.min(phaseDurationMs, phaseDurationMs - clampedRemainingMs);
+            const phaseProgress = phaseDurationMs ? (elapsedInPhaseMs / phaseDurationMs) * 360 : 360;
+            const totalMs = getTotalMs();
+
+            elements.timeRemaining.textContent = formatTime(Math.ceil(clampedRemainingMs / 1000));
+            elements.phaseName.textContent = finished ? "Done" : phase.label;
+            elements.phasePill.textContent = finished ? "Done" : phase.label;
+            elements.phasePill.className = `phase-pill ${finished ? "done" : phase.type}`;
+            elements.repLine.textContent = getRepText(phase);
+            elements.progressRing.style.setProperty("--progress", `${phaseProgress}deg`);
+            elements.progressRing.style.setProperty("--phase-color", getPhaseColor(phase.type));
+            elements.startPauseButton.textContent = finished ? "Restart" : running ? "Pause" : phaseIndex === 0 && remainingMs === phaseDurationMs ? "Start" : "Resume";
+
+            if (updatePlan) {
+                renderSummary(totalMs);
+                renderTimeline();
+            }
+        }
+
+        function renderSummary(totalMs) {
+            elements.planSummaryCompact.textContent = `${formatTime(settings.warmupSeconds)} warmup, ${settings.reps} reps`;
+            elements.planSummary.innerHTML = `
+                <strong>${formatTime(Math.round(totalMs / 1000))}</strong> total:
+                ${formatTime(settings.warmupSeconds)} warmup,
+                ${settings.reps} x ${formatTime(settings.runSeconds)} run / ${formatTime(settings.walkSeconds)} walk.
+            `;
+        }
+
+        function renderTimeline() {
+            const runFr = Math.max(settings.runSeconds, 1);
+            const walkFr = Math.max(settings.walkSeconds, 1);
+            elements.timeline.style.setProperty("--run-fr", `${runFr}fr`);
+            elements.timeline.style.setProperty("--walk-fr", `${walkFr}fr`);
+
+            elements.timeline.innerHTML = Array.from({ length: settings.reps }, (_, index) => {
+                const rep = index + 1;
+                const current = !finished && phases[phaseIndex].rep === rep;
+                const complete = getCompletedRep() > rep;
+                const className = [
+                    "timeline-row",
+                    current ? "current" : "",
+                    complete ? "complete" : ""
+                ].filter(Boolean).join(" ");
+
+                return `
+                    <div class="${className}">
+                        <span>Rep ${rep}</span>
+                        <div class="track" aria-hidden="true"><span></span><span></span></div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function getTotalMs() {
+            return phases.reduce((total, phase) => total + phase.duration * 1000, 0);
+        }
+
+        function getRepText(phase) {
+            if (finished) return `Rep ${settings.reps} of ${settings.reps}`;
+            if (phase.type === "warmup") return `Rep 0 of ${settings.reps}`;
+            return `Rep ${phase.rep} of ${settings.reps}`;
+        }
+
+        function getCompletedRep() {
+            if (finished) return settings.reps + 1;
+
+            for (let index = phaseIndex - 1; index >= 0; index -= 1) {
+                if (phases[index].rep > 0) {
+                    return phases[index].rep;
+                }
+            }
+
+            return 0;
+        }
+
+        function hydratePlanner(plan) {
+            elements.warmupValue.textContent = formatTime(plan.warmupSeconds);
+            elements.runValue.textContent = formatTime(plan.runSeconds);
+            elements.walkValue.textContent = formatTime(plan.walkSeconds);
+            elements.repsValue.textContent = plan.reps;
+        }
+
+        function loadSettings() {
+            try {
+                const stored = JSON.parse(localStorage.getItem(storageKey));
+                return sanitizeSettings({ ...defaults, ...stored });
+            } catch {
+                return defaults;
+            }
+        }
+
+        function saveSettings(plan) {
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(plan));
+                return true;
+            } catch {
+                return false;
+            }
+        }
+
+        function sanitizeSettings(plan) {
+            return {
+                warmupSeconds: clampInt(plan.warmupSeconds, 0, 3600),
+                runSeconds: clampInt(plan.runSeconds, 0, 3600),
+                walkSeconds: clampInt(plan.walkSeconds, 0, 3600),
+                reps: clampInt(plan.reps, 1, 60)
+            };
+        }
+
+        function clampInt(value, min, max) {
+            const parsed = Number.parseInt(value, 10);
+            if (Number.isNaN(parsed)) return min;
+            return Math.min(max, Math.max(min, parsed));
+        }
+
+        function formatTime(totalSeconds) {
+            const safeSeconds = Math.max(0, totalSeconds);
+            const hours = Math.floor(safeSeconds / 3600);
+            const minutes = Math.floor((safeSeconds % 3600) / 60);
+            const seconds = safeSeconds % 60;
+
+            if (hours > 0) {
+                return `${hours}:${pad(minutes)}:${pad(seconds)}`;
+            }
+
+            return `${pad(minutes)}:${pad(seconds)}`;
+        }
+
+        function pad(value) {
+            return String(value).padStart(2, "0");
+        }
+
+        function getPhaseColor(type) {
+            if (type === "run") return "var(--run)";
+            if (type === "walk") return "var(--walk)";
+            return "var(--warmup)";
+        }
+
+        function playCue(kind) {
+            const context = getAudioContext();
+            if (!context) return;
+
+            const patterns = {
+                start: [660],
+                run: [880, 1040],
+                walk: [520],
+                finish: [660, 880, 1100]
+            };
+
+            patterns[kind].forEach((frequency, index) => {
+                const start = context.currentTime + index * 0.17;
+                const oscillator = context.createOscillator();
+                const gain = context.createGain();
+                oscillator.type = "sine";
+                oscillator.frequency.value = frequency;
+                gain.gain.setValueAtTime(0.0001, start);
+                gain.gain.exponentialRampToValueAtTime(0.75, start + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.12);
+                oscillator.connect(gain).connect(context.destination);
+                oscillator.start(start);
+                oscillator.stop(start + 0.14);
+            });
+        }
+
+        function getAudioContext() {
+            try {
+                if (!audioContext) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioContext = AudioContext ? new AudioContext() : null;
+                }
+
+                if (audioContext && audioContext.state === "suspended") {
+                    audioContext.resume();
+                }
+
+                return audioContext;
+            } catch {
+                return null;
+            }
+        }
+
+        function vibrate(pattern) {
+            if ("vibrate" in navigator) {
+                navigator.vibrate(pattern);
+            }
+        }
+
+        async function requestWakeLock() {
+            if (!("wakeLock" in navigator)) return;
+
+            try {
+                wakeLock = await navigator.wakeLock.request("screen");
+                wakeLock.addEventListener("release", () => {
+                    wakeLock = null;
+                });
+            } catch {
+                wakeLock = null;
+            }
+        }
+
+        function releaseWakeLock() {
+            if (!wakeLock) return;
+            wakeLock.release();
+            wakeLock = null;
+        }
+    </script>
+</body>
+</html>
