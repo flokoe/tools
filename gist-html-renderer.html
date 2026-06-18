@@ -4,7 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gist HTML Renderer</title>
-    <meta name="description" content="Render HTML from a GitHub Gist by passing a Gist ID in the URL query string.">
+    <meta name="description" content="Render HTML from a GitHub Gist by passing a Gist ID in the URL hash.">
+    <script>
+        (() => {
+            const params = new URLSearchParams(window.location.search);
+            const hasDirectGist = window.location.hash.replace(/^#/, "").trim() || params.get("id") || params.get("gist");
+
+            if (hasDirectGist) {
+                document.documentElement.dataset.mode = "loading";
+            }
+        })();
+    </script>
     <style>
         :root {
             --bg: #fafafa;
@@ -45,7 +55,8 @@
             line-height: 1.5;
         }
 
-        body.rendering .shell {
+        html[data-mode="loading"] .shell,
+        html[data-mode="rendering"] .shell {
             display: none;
         }
 
@@ -63,7 +74,8 @@
             background: #fff;
         }
 
-        body.rendering .render-frame {
+        html[data-mode="loading"] .render-frame,
+        html[data-mode="rendering"] .render-frame {
             display: block;
         }
 
@@ -229,6 +241,7 @@
                 const requestId = ++renderRequestId;
 
                 try {
+                    setMode("loading");
                     const gistId = parseGistId(gistValue);
                     setStatus(`Loading gist ${gistId}...`);
 
@@ -343,7 +356,7 @@
                 const htmlWithBase = injectHeadContent(html, baseElement);
 
                 renderFrame.srcdoc = htmlWithBase;
-                document.body.classList.add("rendering");
+                setMode("rendering");
             }
 
             function injectHeadContent(html, headContent) {
@@ -371,6 +384,10 @@
             }
 
             function setStatus(message, isError = false) {
+                if (isError) {
+                    setMode("tool");
+                }
+
                 status.textContent = message;
                 status.hidden = false;
                 status.classList.toggle("error", isError);
@@ -378,11 +395,15 @@
 
             function showTool() {
                 renderRequestId += 1;
-                document.body.classList.remove("rendering");
+                setMode("tool");
                 renderFrame.removeAttribute("srcdoc");
                 status.hidden = true;
                 status.textContent = "";
                 status.classList.remove("error");
+            }
+
+            function setMode(mode) {
+                document.documentElement.dataset.mode = mode;
             }
         })();
     </script>
