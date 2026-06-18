@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gist HTML Renderer</title>
+    <meta name="description" content="Render HTML from a GitHub Gist by passing a Gist ID in the URL query string.">
+    <style>
+        :root {
+            --bg: #fafafa;
+            --panel: #fff;
+            --text: #24292f;
+            --muted: #57606a;
+            --border: #d0d7de;
+            --accent: #0969da;
+            --accent-hover: #0759ba;
+            --error: #cf222e;
+            --error-bg: #ffebe9;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0d1117;
+                --panel: #161b22;
+                --text: #e6edf3;
+                --muted: #8b949e;
+                --border: #30363d;
+                --accent: #58a6ff;
+                --accent-hover: #79c0ff;
+                --error: #ff7b72;
+                --error-bg: #3d1117;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.5;
+        }
+
+        body.rendering .shell {
+            display: none;
+        }
+
+        .shell {
+            width: min(720px, calc(100% - 2rem));
+            margin: 0 auto;
+            padding: 4rem 0;
+        }
+
+        .render-frame {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            border: 0;
+            background: #fff;
+        }
+
+        body.rendering .render-frame {
+            display: block;
+        }
+
+        header {
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            margin: 0 0 0.5rem;
+            font-size: clamp(1.75rem, 5vw, 2.5rem);
+            line-height: 1.1;
+        }
+
+        p {
+            margin: 0 0 1rem;
+            color: var(--muted);
+        }
+
+        form {
+            display: grid;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        label {
+            display: grid;
+            gap: 0.375rem;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            min-height: 2.75rem;
+            padding: 0.625rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--text);
+            font: inherit;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+            outline: 2px solid color-mix(in srgb, var(--accent) 25%, transparent);
+            outline-offset: 0;
+        }
+
+        button {
+            min-height: 2.75rem;
+            padding: 0.625rem 0.9rem;
+            border: 0;
+            border-radius: 6px;
+            background: var(--accent);
+            color: #fff;
+            cursor: pointer;
+            font: inherit;
+            font-weight: 700;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+        }
+
+        .hint {
+            margin-top: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .status {
+            padding: 1rem;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .error {
+            color: var(--error);
+            background: var(--error-bg);
+            border-color: color-mix(in srgb, var(--error) 50%, var(--border));
+        }
+
+        code {
+            padding: 0.125rem 0.25rem;
+            border-radius: 4px;
+            background: color-mix(in srgb, var(--border) 35%, transparent);
+            color: var(--text);
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <header>
+            <h1>Gist HTML Renderer</h1>
+            <p>Pass a GitHub Gist ID in the URL hash to fetch its raw HTML and render it into this page.</p>
+        </header>
+
+        <form id="gistForm" autocomplete="off">
+            <label>
+                Gist ID or URL
+                <input id="gistInput" name="gist" placeholder="1237846329284762324" required>
+            </label>
+            <label>
+                File name
+                <input id="fileInput" name="file" placeholder="Optional, for gists with multiple files">
+            </label>
+            <button type="submit">Render Gist HTML</button>
+        </form>
+
+        <p class="hint">URL format: <code>#&lt;gist-id&gt;</code> or <code>#&lt;gist-id&gt;:index.html</code></p>
+        <div id="status" class="status" hidden></div>
+    </main>
+    <iframe id="renderFrame" class="render-frame" title="Rendered Gist HTML"></iframe>
+
+    <script>
+        (() => {
+            "use strict";
+
+            const form = document.getElementById("gistForm");
+            const gistInput = document.getElementById("gistInput");
+            const fileInput = document.getElementById("fileInput");
+            const status = document.getElementById("status");
+            const renderFrame = document.getElementById("renderFrame");
+            let renderRequestId = 0;
+
+            form.addEventListener("submit", (event) => {
+                event.preventDefault();
+
+                const gist = gistInput.value.trim();
+                const file = fileInput.value.trim();
+                const hash = `${encodeURIComponent(gist)}${file ? `:${encodeURIComponent(file)}` : ""}`;
+
+                if (window.location.hash.slice(1) === hash) {
+                    loadFromUrl();
+                    return;
+                }
+
+                window.location.hash = hash;
+            });
+
+            window.addEventListener("hashchange", loadFromUrl);
+            loadFromUrl();
+
+            function loadFromUrl() {
+                const params = new URLSearchParams(window.location.search);
+                const hashRequest = parseHashRequest(window.location.hash);
+                const requestedGist = hashRequest.gist || params.get("id") || params.get("gist");
+                const requestedFile = hashRequest.file || params.get("file") || "";
+
+                if (!requestedGist) {
+                    showTool();
+                    return;
+                }
+
+                gistInput.value = requestedGist;
+                fileInput.value = requestedFile;
+                loadAndRender(requestedGist, requestedFile);
+            }
+
+            async function loadAndRender(gistValue, requestedFilename) {
+                const requestId = ++renderRequestId;
+
+                try {
+                    const gistId = parseGistId(gistValue);
+                    setStatus(`Loading gist ${gistId}...`);
+
+                    const response = await fetch(`https://api.github.com/gists/${encodeURIComponent(gistId)}`, {
+                        headers: {
+                            "Accept": "application/vnd.github+json"
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`GitHub returned ${response.status} ${response.statusText || ""}`.trim());
+                    }
+
+                    const gist = await response.json();
+                    const file = selectHtmlFile(gist.files || {}, requestedFilename);
+                    const html = await loadFileContent(file);
+
+                    if (requestId !== renderRequestId) {
+                        return;
+                    }
+
+                    renderHtml(html, file.raw_url || gist.html_url || window.location.href);
+                } catch (error) {
+                    if (requestId !== renderRequestId) {
+                        return;
+                    }
+
+                    setStatus(error.message || "Unable to load that gist.", true);
+                }
+            }
+
+            function parseGistId(value) {
+                const trimmed = value.trim().replace(/^#/, "");
+                const isGistId = (candidate) => /^[0-9a-f]{1,64}$/i.test(candidate);
+
+                try {
+                    const url = new URL(trimmed);
+                    const segment = url.pathname.split("/").reverse().find(isGistId);
+
+                    if (segment) {
+                        return segment;
+                    }
+                } catch {
+                    if (isGistId(trimmed)) {
+                        return trimmed;
+                    }
+                }
+
+                throw new Error("Use a valid GitHub Gist ID or Gist URL.");
+            }
+
+            function parseHashRequest(hash) {
+                const trimmed = hash.replace(/^#/, "").trim();
+
+                if (!trimmed) {
+                    return { gist: "", file: "" };
+                }
+
+                const [pathPart, queryPart = ""] = trimmed.split("?", 2);
+                const hashParams = new URLSearchParams(queryPart);
+                const colonIndex = pathPart.indexOf(":");
+                const gistPart = colonIndex === -1 ? pathPart : pathPart.slice(0, colonIndex);
+                const filePart = colonIndex === -1 ? "" : pathPart.slice(colonIndex + 1);
+
+                return {
+                    gist: decodeURIComponent(gistPart),
+                    file: filePart ? decodeURIComponent(filePart) : hashParams.get("file") || ""
+                };
+            }
+
+            function selectHtmlFile(files, requestedFilename) {
+                const allFiles = Object.values(files);
+
+                if (allFiles.length === 0) {
+                    throw new Error("That gist does not contain any files.");
+                }
+
+                if (requestedFilename) {
+                    const exactMatch = files[requestedFilename] || allFiles.find((file) => file.filename === requestedFilename);
+
+                    if (!exactMatch) {
+                        throw new Error(`The gist does not contain "${requestedFilename}".`);
+                    }
+
+                    return exactMatch;
+                }
+
+                return allFiles.find((file) => /\.html?$/i.test(file.filename)) || allFiles[0];
+            }
+
+            async function loadFileContent(file) {
+                if (typeof file.content === "string" && !file.truncated) {
+                    return file.content;
+                }
+
+                if (!file.raw_url) {
+                    throw new Error(`Could not find raw content for "${file.filename}".`);
+                }
+
+                const response = await fetch(file.raw_url);
+
+                if (!response.ok) {
+                    throw new Error(`Could not load raw file "${file.filename}".`);
+                }
+
+                return response.text();
+            }
+
+            function renderHtml(html, rawUrl) {
+                const baseHref = new URL(".", rawUrl).href;
+                const baseElement = `<base href="${escapeAttribute(baseHref)}">`;
+                const htmlWithBase = injectHeadContent(html, baseElement);
+
+                renderFrame.srcdoc = htmlWithBase;
+                document.body.classList.add("rendering");
+            }
+
+            function injectHeadContent(html, headContent) {
+                if (/<base\s/i.test(html)) {
+                    headContent = headContent.replace(/<base[^>]*>/i, "");
+                }
+
+                if (/<head[^>]*>/i.test(html)) {
+                    return html.replace(/<head([^>]*)>/i, `<head$1>${headContent}`);
+                }
+
+                if (/<!doctype html>/i.test(html) || /<html[^>]*>/i.test(html)) {
+                    return html.replace(/<html([^>]*)>/i, `<html$1><head>${headContent}</head>`);
+                }
+
+                return `<!DOCTYPE html><html><head>${headContent}<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body>${html}</body></html>`;
+            }
+
+            function escapeAttribute(value) {
+                return String(value)
+                    .replace(/&/g, "&amp;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;");
+            }
+
+            function setStatus(message, isError = false) {
+                status.textContent = message;
+                status.hidden = false;
+                status.classList.toggle("error", isError);
+            }
+
+            function showTool() {
+                renderRequestId += 1;
+                document.body.classList.remove("rendering");
+                renderFrame.removeAttribute("srcdoc");
+                status.hidden = true;
+                status.textContent = "";
+                status.classList.remove("error");
+            }
+        })();
+    </script>
+</body>
+</html>
