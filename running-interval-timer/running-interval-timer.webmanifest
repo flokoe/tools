@@ -1,0 +1,41 @@
+{
+    "name": "Running Interval Timer",
+    "short_name": "Run Timer",
+    "description": "A running interval timer with warmup, run/walk repetitions, audio cues, and persistent settings.",
+    "start_url": "./",
+    "scope": "./",
+    "display": "fullscreen",
+    "display_override": [
+        "fullscreen",
+        "standalone"
+    ],
+    "orientation": "portrait",
+    "background_color": "#f7f5f1",
+    "theme_color": "#0b7a75",
+    "categories": [
+        "fitness",
+        "health",
+        "sports",
+        "utilities"
+    ],
+    "icons": [
+        {
+            "src": "./running-interval-timer-icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "./running-interval-timer-icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "./running-interval-timer-icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
