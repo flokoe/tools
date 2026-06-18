@@ -751,6 +751,7 @@
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === "visible" && running) {
                 lastTick = performance.now();
+                requestWakeLock();
             }
         });
 
@@ -1110,12 +1111,16 @@
         }
 
         async function requestWakeLock() {
-            if (!("wakeLock" in navigator)) return;
+            if (!("wakeLock" in navigator) || wakeLock || document.visibilityState !== "visible") return;
 
             try {
                 wakeLock = await navigator.wakeLock.request("screen");
                 wakeLock.addEventListener("release", () => {
                     wakeLock = null;
+
+                    if (running && !finished && document.visibilityState === "visible") {
+                        requestWakeLock();
+                    }
                 });
             } catch {
                 wakeLock = null;
@@ -1124,8 +1129,9 @@
 
         function releaseWakeLock() {
             if (!wakeLock) return;
-            wakeLock.release();
+            const lock = wakeLock;
             wakeLock = null;
+            lock.release().catch(() => {});
         }
 
         async function installApp() {
