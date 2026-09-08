@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Markdown editor</title>
+<!-- Dependency manifest: Native ESM packages keep shared modules external; every bare import
+     resolves through this exact-version map, including transitive dependencies.
+     No bundler, presets, or duplicate CodeMirror state instances. -->
+<script type="importmap" id="dependency-manifest">
+{
+  "imports": {
+    "@codemirror/autocomplete": "https://cdn.jsdelivr.net/npm/@codemirror/autocomplete@6.20.3/dist/index.js",
+    "@codemirror/commands": "https://cdn.jsdelivr.net/npm/@codemirror/commands@6.8.1/dist/index.js",
+    "@codemirror/lang-css": "https://cdn.jsdelivr.net/npm/@codemirror/lang-css@6.3.1/dist/index.js",
+    "@codemirror/lang-html": "https://cdn.jsdelivr.net/npm/@codemirror/lang-html@6.4.9/dist/index.js",
+    "@codemirror/lang-javascript": "https://cdn.jsdelivr.net/npm/@codemirror/lang-javascript@6.2.4/dist/index.js",
+    "@codemirror/lang-json": "https://cdn.jsdelivr.net/npm/@codemirror/lang-json@6.0.2/dist/index.js",
+    "@codemirror/lang-markdown": "https://cdn.jsdelivr.net/npm/@codemirror/lang-markdown@6.3.4/dist/index.js",
+    "@codemirror/lang-python": "https://cdn.jsdelivr.net/npm/@codemirror/lang-python@6.2.1/dist/index.js",
+    "@codemirror/lang-sql": "https://cdn.jsdelivr.net/npm/@codemirror/lang-sql@6.9.0/dist/index.js",
+    "@codemirror/lang-xml": "https://cdn.jsdelivr.net/npm/@codemirror/lang-xml@6.1.0/dist/index.js",
+    "@codemirror/lang-yaml": "https://cdn.jsdelivr.net/npm/@codemirror/lang-yaml@6.1.2/dist/index.js",
+    "@codemirror/language": "https://cdn.jsdelivr.net/npm/@codemirror/language@6.11.3/dist/index.js",
+    "@codemirror/lint": "https://cdn.jsdelivr.net/npm/@codemirror/lint@6.9.7/dist/index.js",
+    "@codemirror/state": "https://cdn.jsdelivr.net/npm/@codemirror/state@6.7.4/dist/index.js",
+    "@codemirror/view": "https://cdn.jsdelivr.net/npm/@codemirror/view@6.43.11/dist/index.js",
+    "@lezer/common": "https://cdn.jsdelivr.net/npm/@lezer/common@1.5.2/dist/index.js",
+    "@lezer/css": "https://cdn.jsdelivr.net/npm/@lezer/css@1.3.6/dist/index.js",
+    "@lezer/highlight": "https://cdn.jsdelivr.net/npm/@lezer/highlight@1.2.1/dist/index.js",
+    "@lezer/html": "https://cdn.jsdelivr.net/npm/@lezer/html@1.3.13/dist/index.js",
+    "@lezer/javascript": "https://cdn.jsdelivr.net/npm/@lezer/javascript@1.5.4/dist/index.js",
+    "@lezer/json": "https://cdn.jsdelivr.net/npm/@lezer/json@1.0.3/dist/index.js",
+    "@lezer/lr": "https://cdn.jsdelivr.net/npm/@lezer/lr@1.4.10/dist/index.js",
+    "@lezer/markdown": "https://cdn.jsdelivr.net/npm/@lezer/markdown@1.4.3/dist/index.js",
+    "@lezer/python": "https://cdn.jsdelivr.net/npm/@lezer/python@1.1.19/dist/index.js",
+    "@lezer/xml": "https://cdn.jsdelivr.net/npm/@lezer/xml@1.0.6/dist/index.js",
+    "@lezer/yaml": "https://cdn.jsdelivr.net/npm/@lezer/yaml@1.0.4/dist/index.js",
+    "@marijn/find-cluster-break": "https://cdn.jsdelivr.net/npm/@marijn/find-cluster-break@1.0.4/src/index.js",
+    "crelt": "https://cdn.jsdelivr.net/npm/crelt@1.0.7/index.js",
+    "dompurify": "https://cdn.jsdelivr.net/npm/dompurify@3.4.15/dist/purify.es.mjs",
+    "marked": "https://cdn.jsdelivr.net/npm/marked@16.2.1/lib/marked.esm.js",
+    "style-mod": "https://cdn.jsdelivr.net/npm/style-mod@4.1.3/src/style-mod.js",
+    "w3c-keyname": "https://cdn.jsdelivr.net/npm/w3c-keyname@2.2.8/index.js",
+    "@codemirror/legacy-modes/mode/shell": "https://cdn.jsdelivr.net/npm/@codemirror/legacy-modes@6.5.1/mode/shell.js",
+    "highlight.js/lib/core": "https://esm.sh/highlight.js@11.11.1/lib/core?external=*&target=es2022",
+    "highlight.js/lib/languages/javascript": "https://esm.sh/highlight.js@11.11.1/lib/languages/javascript?external=*&target=es2022",
+    "highlight.js/lib/languages/typescript": "https://esm.sh/highlight.js@11.11.1/lib/languages/typescript?external=*&target=es2022",
+    "highlight.js/lib/languages/json": "https://esm.sh/highlight.js@11.11.1/lib/languages/json?external=*&target=es2022",
+    "highlight.js/lib/languages/xml": "https://esm.sh/highlight.js@11.11.1/lib/languages/xml?external=*&target=es2022",
+    "highlight.js/lib/languages/css": "https://esm.sh/highlight.js@11.11.1/lib/languages/css?external=*&target=es2022",
+    "highlight.js/lib/languages/python": "https://esm.sh/highlight.js@11.11.1/lib/languages/python?external=*&target=es2022",
+    "highlight.js/lib/languages/bash": "https://esm.sh/highlight.js@11.11.1/lib/languages/bash?external=*&target=es2022",
+    "highlight.js/lib/languages/sql": "https://esm.sh/highlight.js@11.11.1/lib/languages/sql?external=*&target=es2022",
+    "highlight.js/lib/languages/yaml": "https://esm.sh/highlight.js@11.11.1/lib/languages/yaml?external=*&target=es2022"
+  }
+}
+</script>
+<style id="font-styles">
+@font-face { font-family: Hack; font-weight: 400; font-style: normal; font-display: swap; src: url("https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/fonts/hack-regular.woff2") format("woff2"); }
+@font-face { font-family: Hack; font-weight: 700; font-style: normal; font-display: swap; src: url("https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/fonts/hack-bold.woff2") format("woff2"); }
+@font-face { font-family: Hack; font-weight: 400; font-style: italic; font-display: swap; src: url("https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/fonts/hack-italic.woff2") format("woff2"); }
+@font-face { font-family: Hack; font-weight: 700; font-style: italic; font-display: swap; src: url("https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/fonts/hack-bolditalic.woff2") format("woff2"); }
+@font-face { font-family: Inter; font-style: normal; font-weight: 400; font-display: swap; src: url("https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.6/files/inter-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: Inter; font-style: normal; font-weight: 700; font-display: swap; src: url("https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.6/files/inter-latin-700-normal.woff2") format("woff2"); }
+</style>
+<style>
+:root { color-scheme: light; --base:#eff1f5; --text:#4c4f69; --muted:#6c6f85; --surface:#e6e9ef; --menu:#fff; --accent:#8839ef; --blue:#1e66f5; --bold:#b94d10; --italic:#a8328b; --green:#40a02b; --yellow:#df8e1d; --red:#d20f39; --code:#179299; --selection:#ccd0da; }
+@media (prefers-color-scheme:dark) { :root { color-scheme:dark; --base:#1e1e2e; --text:#cdd6f4; --muted:#a6adc8; --surface:#313244; --menu:#313244; --accent:#cba6f7; --blue:#89b4fa; --bold:#fab387; --italic:#f5c2e7; --green:#a6e3a1; --yellow:#f9e2af; --red:#f38ba8; --code:#94e2d5; --selection:#45475a; } }
+* { box-sizing:border-box; }
+html { background:var(--base); color:var(--text); }
+body { margin:0; font-family:Inter,system-ui,sans-serif; }
+button { color:inherit; font:inherit; cursor:pointer; }
+button:focus-visible, a:focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
+button:disabled { cursor:wait; opacity:.6; }
+[hidden] { display:none !important; }
+#writing {
+  --editor-font-size:20px;
+  --editor-line-height:1.65;
+  --font-h1:1.802rem;
+  --font-h2:1.602rem;
+  --font-h3:1.424rem;
+  --font-h4:1.266rem;
+  --font-h5:1.125rem;
+  --font-base:1rem;
+  --font-small:0.889rem;
+  width:min(100%,996px); margin:0 auto; padding:120px 48px 35vh;
+}
+#source, .cm-editor { font:var(--editor-font-size)/var(--editor-line-height) Hack,ui-monospace,monospace; font-synthesis:none; }
+#source { display:block; width:100%; min-height:55vh; padding:0; margin:0; border:0; outline:0; resize:none; overflow:hidden; background:transparent; color:var(--text); overflow-wrap:anywhere; tab-size:4; }
+.cm-editor { background:transparent; outline:none !important; }
+.cm-editor .cm-scroller { font:inherit; overflow:visible; }
+.cm-editor .cm-content { padding:0; min-height:55vh; caret-color:var(--text); overflow-wrap:anywhere; }
+#source::placeholder, .cm-editor .cm-placeholder { color:var(--muted); opacity:1; }
+.cm-editor .cm-line { padding:0; overflow-wrap:anywhere; word-break:break-word; }
+/* Firefox measures an empty line's caret from its BR. Keep that text-sized,
+   and move the extra line spacing into padding. */
+.cm-editor .cm-line:has(> br:only-child) { line-height:normal; padding-block:calc((var(--editor-line-height) * 1em - 1lh) / 2); }
+.cm-editor .cm-cursor { border-left:2px solid var(--text); margin-left:-1px; }
+.cm-editor.cm-focused > .cm-scroller > .cm-cursorLayer { animation-timing-function:step-end; opacity:1; transition:none; }
+/* CodeMirror alternates these names to restart blinking when the caret moves. */
+@keyframes cm-blink { 0%,100% { visibility:visible; } 50% { visibility:hidden; } }
+@keyframes cm-blink2 { 0%,100% { visibility:visible; } 50% { visibility:hidden; } }
+#enhanced .cm-selectionBackground { background:var(--selection); }
+::selection { background:var(--selection); }
+#controls { position:fixed; z-index:10; top:max(20px,env(safe-area-inset-top)); right:max(24px,env(safe-area-inset-right)); display:flex; gap:10px; align-items:center; padding:4px; border-radius:12px; background:var(--base); }
+.icon-button { display:grid; place-items:center; width:40px; height:40px; border:0; border-radius:8px; background:transparent; }
+.icon-button:hover, .icon-button[aria-expanded=true] { background:var(--surface); }
+.lucide { width:24px; height:24px; }
+#save-indicator { display:grid; place-items:center; width:28px; height:32px; color:var(--muted); }
+#save-indicator[data-state=pending] { color:var(--yellow); }
+#save-indicator[data-state=saved] { color:var(--green); }
+#save-indicator[data-state=error] { color:var(--red); }
+#save-indicator svg { display:none; }
+#save-indicator[data-state=idle] .lucide-circle,
+#save-indicator[data-state=error] .lucide-circle,
+#save-indicator[data-state=pending] .lucide-circle-dashed,
+#save-indicator[data-state=saved] .lucide-circle-check { display:block; }
+#export-menu { position:absolute; top:calc(100% + 4px); right:4px; min-width:176px; padding:6px; border:1px solid var(--selection); border-radius:10px; background:var(--menu); box-shadow:0 12px 32px #0003,0 3px 8px #0002; }
+#export-menu button { display:block; width:100%; padding:10px 14px; text-align:left; border:0; border-radius:5px; background:transparent; }
+#export-menu button:hover, #export-menu button:focus-visible { background:var(--selection); }
+#messages { position:fixed; z-index:6; top:max(82px,calc(env(safe-area-inset-top) + 62px)); right:max(24px,env(safe-area-inset-right)); width:min(370px,calc(100vw - 32px)); max-height:65vh; overflow:auto; font-size:13px; line-height:1.5; }
+.message { padding:14px; margin-bottom:8px; border:1px solid var(--selection); border-radius:9px; background:var(--base); box-shadow:0 6px 24px #0001; overflow-wrap:anywhere; }
+.message p { margin:0 24px 8px 0; }
+.message .dismiss { float:right; background:transparent; border:0; padding:0 4px; font-size:18px; }
+.message .action { border:1px solid var(--selection); border-radius:5px; background:var(--surface); padding:5px 8px; margin:4px 6px 0 0; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0; }
+@media(max-width:600px) { #writing { --editor-font-size:16px; --editor-line-height:1.75; padding:100px max(20px,env(safe-area-inset-right)) 30vh max(20px,env(safe-area-inset-left)); } #controls { top:max(12px,env(safe-area-inset-top)); right:max(12px,env(safe-area-inset-right)); } #messages { right:16px; } }
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto !important; animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+<div id="controls">
+  <span id="save-indicator" role="img" aria-label="No local write yet" title="No local write yet" data-state="idle">
+    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle"><circle cx="12" cy="12" r="10"/></svg>
+    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-dashed"><path d="M10.1 2.182a10 10 0 0 1 3.8 0"/><path d="M13.9 21.818a10 10 0 0 1-3.8 0"/><path d="M17.609 3.721a10 10 0 0 1 2.69 2.7"/><path d="M2.182 13.9a10 10 0 0 1 0-3.8"/><path d="M20.279 17.609a10 10 0 0 1-2.7 2.69"/><path d="M21.818 10.1a10 10 0 0 1 0 3.8"/><path d="M3.721 6.391a10 10 0 0 1 2.7-2.69"/><path d="M6.391 20.279a10 10 0 0 1-2.69-2.7"/></svg>
+    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check"><circle cx="12" cy="12" r="10"/><path d="m16 9-5.5 5.5L8 12"/></svg>
+  </span>
+  <button id="export-button" class="icon-button" aria-label="Export document" aria-haspopup="menu" aria-expanded="false" aria-controls="export-menu" title="Export document"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg></button>
+  <div id="export-menu" role="menu" aria-label="Export format" hidden>
+    <button role="menuitem" data-format="md" tabindex="-1">Markdown</button>
+    <button role="menuitem" data-format="html" tabindex="-1">HTML</button>
+    <button role="menuitem" data-format="pdf" tabindex="-1">PDF</button>
+  </div>
+</div>
+<main id="writing"><textarea id="source" name="markdown" aria-label="Markdown source" placeholder="Start writing…" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea><div id="enhanced" hidden></div></main>
+<div id="save-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+<div id="messages" aria-label="Notifications"></div>
+<script>
+'use strict';
+(() => {
+/*
+Public API — available before any CDN request completes:
+  getContent(): exact Markdown string (including supplied line endings).
+  setContent(string): one undoable programmatic change; identical content is a no-op.
+  focus(): focus the active editor. save(): {ok,savedAt?,error?}, synchronous.
+  export('md'|'html'|'pdf'): Promise<{format,ok,filename?,outcome?,error?}>.
+    Outcomes: download-started / print-opened; neither confirms a file was saved.
+    Runtime failures resolve {ok:false}; invalid formats reject with TypeError.
+    PDF prints the rendered document through an invisible frame in this tab.
+  on('change'|'save'|'export'|'error', callback): idempotent unsubscribe function.
+    change: {content,origin:'user'|'programmatic'} (undo/redo are user changes).
+    save/export: the result above. error: {operation,message,cause?,recoverable}.
+    Invalid setContent/on arguments throw TypeError. Subscribers are isolated.
+
+Storage: raw text at quiet.markdown.v1, scoped to this browser and origin/file.
+No startup write. A failed read is never interpreted as a successfully saved note.
+If editing starts before enhancement, keep the textarea for this session to retain
+its coherent history. Reload after saving to retry enhancement. No Tab binding.
+
+Dependencies: exact import-map pins above; fonts in #font-styles. Native ESM
+imports share one state module; highlight.js uses pinned esm.sh translations.
+Renderer/highlighter/sanitizer load only for HTML/PDF. CDN access is needed for
+uncached dependencies/fonts, and authored images may also need the network.
+Palette: https://catppuccin.com/palette/ (Latte / Mocha).
+
+Verification (2026-09-08): Chromium 151 and Firefox 153 automation covered
+file:// and HTTP, enhanced/fallback editing, exact source/undo, storage, menus,
+responsive themes, sanitized exports and filenames. Chromium also covered
+dependency failures/retries, print resource recovery and 13-page pagination.
+Desktop/mobile dark-theme screenshots were inspected in Paseo. Native print
+dialogs, OS shortcuts, real IME, screen readers and browser zoom still need
+manual checks. WebKit could not launch here (missing libicudata.so.74);
+Safari support has not been verified. No tests or build tools are required to run.
+*/
+const $ = id => document.getElementById(id);
+const normalize = text => text.replace(/\r\n?/g,'\n');
+const listeners = new Map(['change','save','export','error'].map(name=>[name,new Set()]));
+function emit(name,payload) {
+  for (const callback of [...listeners.get(name)]) {
+    try { callback(payload); } catch { console.warn('A markdownEditor subscriber threw an exception.'); }
+  }
+}
+function report(operation,message,cause) { emit('error',{operation,message,cause,recoverable:true}); }
+function notice(key,message,actions=[]) {
+  $(key)?.remove();
+  const box=document.createElement('div'); box.id=key; box.className='message';
+  const dismiss=document.createElement('button'); dismiss.className='dismiss'; dismiss.textContent='×'; dismiss.setAttribute('aria-label','Dismiss notification'); dismiss.onclick=()=>box.remove();
+  const text=document.createElement('p'); text.textContent=message; text.setAttribute('role','status');
+  box.append(dismiss,text);
+  for(const [label,run] of actions) { const button=document.createElement('button'); button.className='action'; button.textContent=label; button.onclick=run; box.append(button); }
+  $('messages').append(box);
+}
+function status(state,label) {
+  const indicator=$('save-indicator');
+  indicator.dataset.state=state; indicator.setAttribute('aria-label',label); indicator.title=label;
+  if($('save-status').textContent!==label) $('save-status').textContent=label;
+}
+function bounded(promise,ms,label) {
+  let timer;
+  return Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label+' timed out.')),ms);})]).finally(()=>clearTimeout(timer));
+}
+const dependencies=JSON.parse($('dependency-manifest').textContent).imports;
+const requests=new Map(), attempts=new Map();
+function load(name) {
+  if(requests.has(name)) return requests.get(name);
+  const attempt=attempts.get(name)||0;
+  const url=dependencies[name];
+  if(!url) return Promise.reject(new Error('Unknown dependency: '+name));
+  // Cache-bust failed top-level imports: browsers cache failed module evaluations.
+  const request=bounded(import(url+(attempt?(url.includes('?')?'&':'?')+'retry='+attempt:'')),15000,name)
+    .catch(error=>{requests.delete(name);attempts.set(name,attempt+1);throw error;});
+  requests.set(name,request); return request;
+}
+// Translate normalized editor offsets back into the exact raw string. Existing
+// CRLF/CR breaks survive edits; freshly typed line breaks use LF.
+function rawOffset(raw,offset) {
+  let i=0,n=0; for(;i<raw.length&&n<offset;i++,n++) if(raw[i]==='\r'&&raw[i+1]==='\n') i++;
+  return i;
+}
+function spliceRaw(raw,from,to,insert) { return raw.slice(0,rawOffset(raw,from))+insert+raw.slice(rawOffset(raw,to)); }
+function reconcile(raw,next) {
+  const old=normalize(raw); let start=0,end=0;
+  while(start<old.length&&start<next.length&&old[start]===next[start]) start++;
+  while(end<old.length-start&&end<next.length-start&&old[old.length-1-end]===next[next.length-1-end]) end++;
+  return spliceRaw(raw,start,old.length-end,next.slice(start,next.length-end));
+}
+
+// Persistence controller. Revision numbers prevent duplicate lifecycle writes.
+const storageKey='quiet.markdown.v1';
+let revision=0,savedRevision=0,dirty=false,saveTimer=null,savedAt,readError=null,restored='';
+try { const value=localStorage.getItem(storageKey); restored=value===null?'':value; }
+catch(error) { readError=error; }
+function storageFailure(error,reading=false) {
+  const message=reading?'Local storage could not be read. Existing saved text has not been overwritten. You can keep writing and download Markdown.':'Could not save locally. Your text is still here. Retry or download Markdown.';
+  status('error',reading?'Local storage could not be read':'Local save failed');
+  notice('storage-error',message,[['Retry',()=>{if(readError&&!dirty) retryRead(); else save();}],['Download Markdown',()=>exportDocument('md')]]);
+  report(reading?'storage-read':'save',message,error);
+}
+function retryRead() {
+  try {
+    const value=localStorage.getItem(storageKey); readError=null;
+    if(value!==null) adapter.restore(value);
+    $('storage-error')?.remove(); status('idle','Restored locally; no new write yet');
+  } catch(error) { storageFailure(error,true); }
+}
+function changed(origin) {
+  revision++; dirty=true; clearTimeout(saveTimer); status('pending','Changes pending');
+  saveTimer=setTimeout(save,300); emit('change',{content:adapter.getContent(),origin});
+}
+function save() {
+  clearTimeout(saveTimer); saveTimer=null;
+  if(!dirty&&savedRevision===revision&&savedAt) return {ok:true,savedAt};
+  try {
+    localStorage.setItem(storageKey,adapter.getContent());
+    dirty=false; readError=null; savedRevision=revision; savedAt=new Date().toISOString();
+    status('saved','Saved locally'); $('storage-error')?.remove();
+    const result={ok:true,savedAt}; emit('save',result); return result;
+  } catch(error) {
+    dirty=true; storageFailure(error);
+    const result={ok:false,error:error.message||'Local storage is unavailable.'}; emit('save',result); return result;
+  }
+}
+function flush() { if(dirty) save(); }
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden') flush();});
+window.addEventListener('pagehide',flush); window.addEventListener('beforeunload',flush);
+
+// Editor adapters: textarea owns its entire history, including composition and
+// browser beforeinput history actions. No mixture with native undo stacks.
+function textareaAdapter(initial) {
+  const input=$('source'); let raw=initial,undo=[],redo=[],before=null,composition=null,lastInput=null;
+  input.value=normalize(raw);
+  const selection=()=>({from:input.selectionStart,to:input.selectionEnd,direction:input.selectionDirection});
+  const snapshot=()=>({raw,...selection()});
+  const resize=()=>{input.style.height='0px';input.style.height=Math.max(input.scrollHeight,innerHeight*.55)+'px';};
+  function restoreSnapshot(value) { raw=value.raw;input.value=normalize(raw);input.setSelectionRange(value.from,value.to,value.direction);resize(); }
+  function push(value,group=false) { if(!group) undo.push(value);redo=[]; }
+  function history(back) {
+    if(composition) return true;
+    const source=back?undo:redo,target=back?redo:undo;
+    if(source.length) {target.push(snapshot());restoreSnapshot(source.pop());lastInput=null;changed('user');}
+    return true;
+  }
+  function replace(from,to,text,anchor,head,origin='user') {
+    const next=spliceRaw(raw,from,to,text); if(next===raw) return;
+    push(snapshot());lastInput=null;raw=next;input.value=normalize(raw);input.setSelectionRange(anchor,head);resize();changed(origin);
+  }
+  input.addEventListener('beforeinput',event=>{
+    if(event.inputType==='historyUndo'||event.inputType==='historyRedo') {event.preventDefault();history(event.inputType==='historyUndo');return;}
+    before=snapshot();
+  });
+  input.addEventListener('input',event=>{
+    const next=reconcile(raw,input.value); if(next===raw) return;
+    const previous=before||{raw,...selection()};
+    if(!composition) {
+      const now=Date.now();const group=lastInput&&now-lastInput.time<750&&event.inputType==='insertText'&&lastInput.type===event.inputType&&previous.from===lastInput.to&&previous.from===previous.to;
+      push(previous,group);lastInput={time:now,type:event.inputType,to:input.selectionEnd};
+    }
+    raw=next;before=null;resize();changed('user');
+  });
+  input.addEventListener('compositionstart',()=>{composition=snapshot();lastInput=null;});
+  input.addEventListener('compositionend',()=>{if(composition&&composition.raw!==raw) push(composition);composition=null;before=null;});
+  input.addEventListener('keydown',event=>handleShortcut(event));
+  window.addEventListener('resize',resize);document.fonts?.ready.then(resize);resize();
+  return {
+    getContent:()=>raw,getText:()=>normalize(raw),selection,replace,focus:()=>input.focus(),undo:()=>history(true),redo:()=>history(false),
+    setContent(text) {if(raw===text)return;push(snapshot());lastInput=null;raw=text;input.value=normalize(text);input.setSelectionRange(0,0);resize();changed('programmatic');},
+    restore(text) {raw=text;input.value=normalize(text);undo=[];redo=[];resize();},
+    hasHistory:()=>undo.length>0||redo.length>0||revision>0,isComposing:()=>!!composition,
+    destroy:()=>window.removeEventListener('resize',resize)
+  };
+}
+let adapter=textareaAdapter(restored);
+const mac=/Mac|iPhone|iPad|iPod/.test(navigator.platform);
+function handleShortcut(event) {
+  if(event.isComposing||event.altKey||(mac?!event.metaKey:!event.ctrlKey))return false;
+  const key=event.key.toLowerCase(); let handled=true;
+  if(key==='b'&&!event.shiftKey) format('**');
+  else if(key==='i'&&!event.shiftKey) format('*');
+  else if(key==='k'&&!event.shiftKey) format('link');
+  else if(key==='z') event.shiftKey?adapter.redo():adapter.undo();
+  else if(!mac&&key==='y'&&!event.shiftKey) adapter.redo();
+  else handled=false;
+  if(handled) event.preventDefault();return handled;
+}
+function format(marker) {
+  const text=adapter.getText(),{from,to}=adapter.selection(),selected=text.slice(from,to);
+  if(marker==='link') {
+    const insert='['+selected+'](https://)';const anchor=from+selected.length+3;
+    adapter.replace(from,to,insert,anchor,anchor+8);return;
+  }
+  const n=marker.length;
+  const runBefore=pos=>{let count=0;while(text[pos-1-count]==='*') count++;return count;};
+  const runAfter=pos=>{let count=0;while(text[pos+count]==='*') count++;return count;};
+  const includes=selected.length>=n*2&&selected.startsWith(marker)&&selected.endsWith(marker)&&
+    (n===2||(runAfter(from)%2===1&&runBefore(to)%2===1));
+  const surrounds=from>=n&&text.slice(from-n,from)===marker&&text.slice(to,to+n)===marker&&
+    (n===2||(runBefore(from)%2===1&&runAfter(to)%2===1));
+  if(includes) adapter.replace(from,to,selected.slice(n,-n),from,to-2*n);
+  else if(surrounds) adapter.replace(from-n,to+n,selected,from-n,to-n);
+  else adapter.replace(from,to,marker+selected+marker,from+n,to+n);
+}
+window.markdownEditor=Object.freeze({
+  getContent:()=>adapter.getContent(),
+  setContent(text) {if(typeof text!=='string')throw new TypeError('setContent requires a string.');adapter.setContent(text);},
+  focus:()=>adapter.focus(),save,export:exportDocument,
+  on(name,callback) {
+    if(!listeners.has(name)||typeof callback!=='function')throw new TypeError('Expected a supported event name and a callback.');
+    // A wrapper makes separate subscriptions of the same callback independent.
+    const subscription=payload=>callback(payload);listeners.get(name).add(subscription);
+    return ()=>listeners.get(name).delete(subscription);
+  }
+});
+if(readError) storageFailure(readError,true);
+
+// One alias registry serves both fenced editor parsing and exported highlighting.
+const languages=[
+  {name:'javascript',aliases:['js'],pkg:'javascript',factory:'javascript',highlight:'javascript'},
+  {name:'typescript',aliases:['ts'],pkg:'javascript',factory:'javascript',options:{typescript:true},highlight:'typescript'},
+  {name:'jsx',aliases:[],pkg:'javascript',factory:'javascript',options:{jsx:true},highlight:'javascript'},
+  {name:'tsx',aliases:[],pkg:'javascript',factory:'javascript',options:{jsx:true,typescript:true},highlight:'typescript'},
+  {name:'json',aliases:[],pkg:'json',factory:'json',highlight:'json'},
+  {name:'html',aliases:[],pkg:'html',factory:'html',highlight:'xml'},
+  {name:'css',aliases:[],pkg:'css',factory:'css',highlight:'css'},
+  {name:'python',aliases:['py'],pkg:'python',factory:'python',highlight:'python'},
+  {name:'bash',aliases:['sh','shell'],pkg:'shell',highlight:'bash'},
+  {name:'sql',aliases:[],pkg:'sql',factory:'sql',highlight:'sql'},
+  {name:'yaml',aliases:['yml'],pkg:'yaml',factory:'yaml',highlight:'yaml'},
+  {name:'xml',aliases:[],pkg:'xml',factory:'xml',highlight:'xml'}
+];
+const languageAliases=new Map(languages.flatMap(language=>[language.name,...language.aliases].map(name=>[name,language])));
+const resolveLanguage=info=>languageAliases.get((info||'').trim().split(/\s+/)[0].toLowerCase());
+async function enhance() {
+  try {
+    const [state,view,commands,language,markdown,highlight,gfm]=await Promise.all(
+      ['@codemirror/state','@codemirror/view','@codemirror/commands','@codemirror/language','@codemirror/lang-markdown','@lezer/highlight','@lezer/markdown'].map(load));
+    if(adapter.hasHistory()||adapter.isComposing()) {
+      notice('enhancement-deferred','Highlighting is ready. Reload after saving to enable it; this session keeps your editing history.');return;
+    }
+    const initial=adapter.getContent(),selection=adapter.selection(),focused=document.activeElement===$('source'),scroll={x:scrollX,y:scrollY};
+    const rawEffect=state.StateEffect.define(),programmatic=state.Annotation.define();
+    const rawField=state.StateField.define({
+      create:()=>initial,
+      update(raw,tr) {
+        let next='',end=0;
+        tr.changes.iterChanges((from,to,_fromB,_toB,insert)=>{next+=raw.slice(rawOffset(raw,end),rawOffset(raw,from))+insert.toString();end=to;});
+        if(tr.docChanged) raw=next+raw.slice(rawOffset(raw,end));
+        for(const effect of tr.effects) if(effect.is(rawEffect)) raw=effect.value;
+        return raw;
+      }
+    });
+    const descriptions=new Map(languages.map(spec=>[spec.name,language.LanguageDescription.of({name:spec.name,alias:spec.aliases,load:async()=>{
+      try {
+        if(spec.pkg==='shell') {const mod=await load('@codemirror/legacy-modes/mode/shell');return new language.LanguageSupport(language.StreamLanguage.define(mod.shell));}
+        const mod=await load('@codemirror/lang-'+spec.pkg);return mod[spec.factory](spec.options||{});
+      } catch(error) {
+        const message='Highlighting for '+spec.name+' is unavailable. Its code remains editable as plain text.';
+        report('language',message,error);notice('language-warning',message);
+        return new language.LanguageSupport(language.StreamLanguage.define({token:stream=>{stream.skipToEnd();return null;}}));
+      }
+    }})]));
+    const tags=highlight.tags;
+    const styles=language.HighlightStyle.define([
+      // Heading colors take precedence over marker and emphasis colors.
+      {tag:[tags.processingInstruction,tags.meta],color:'var(--muted)'},
+      {tag:tags.quote,color:'var(--muted)'},
+      {tag:tags.emphasis,fontStyle:'italic',color:'var(--italic)'},
+      {tag:tags.strong,fontWeight:'700',color:'var(--bold)'},
+      {tag:tags.heading,fontWeight:'700',color:'var(--text)'},
+      {tag:tags.heading1,fontSize:'max(var(--font-h1), var(--editor-font-size))',fontWeight:'700',color:'var(--accent)'},
+      {tag:tags.heading2,fontSize:'max(var(--font-h2), var(--editor-font-size))',fontWeight:'700',color:'var(--blue)'},
+      {tag:tags.heading3,fontSize:'max(var(--font-h3), var(--editor-font-size))',fontWeight:'700',color:'var(--blue)'},
+      {tag:tags.heading4,fontSize:'max(var(--font-h4), var(--editor-font-size))',fontWeight:'700',color:'var(--blue)'},
+      {tag:tags.heading5,fontSize:'max(var(--font-h5), var(--editor-font-size))',fontWeight:'700',color:'var(--blue)'},
+      {tag:tags.heading6,fontSize:'max(var(--font-base), var(--editor-font-size))',fontWeight:'700',color:'var(--blue)'},
+      {tag:tags.strikethrough,textDecoration:'line-through'},
+      {tag:[tags.link,tags.url],color:'var(--blue)'},
+      {tag:tags.monospace,color:'var(--code)'},
+      {tag:[tags.keyword,tags.operator],color:'var(--accent)'},
+      {tag:[tags.string,tags.regexp],color:'var(--green)'},
+      {tag:[tags.number,tags.bool,tags.null],color:'var(--yellow)'},
+      {tag:[tags.comment],color:'var(--muted)',fontStyle:'italic'},
+      {tag:[tags.typeName,tags.className,tags.tagName],color:'var(--blue)'},
+      {tag:[tags.attributeName,tags.propertyName],color:'var(--code)'}
+    ]);
+    let editor;
+    const editorState=state.EditorState.create({doc:normalize(initial),selection:{anchor:selection.from,head:selection.to},extensions:[
+      rawField,commands.history(),commands.invertedEffects.of(tr=>tr.docChanged||tr.effects.some(e=>e.is(rawEffect))?[rawEffect.of(tr.startState.field(rawField))]:[]),
+      view.EditorView.lineWrapping,view.drawSelection({cursorBlinkRate:1600}),
+      view.placeholder($('source').placeholder),
+      state.EditorState.tabSize.of(4),
+      view.EditorView.contentAttributes.of({'aria-label':'Markdown source','spellcheck':'false','autocapitalize':'off'}),
+      view.EditorView.domEventHandlers({keydown:event=>handleShortcut(event)}),
+      view.keymap.of([...commands.defaultKeymap.filter(binding=>!['Mod-b','Mod-i','Mod-k'].includes(binding.key)),...commands.historyKeymap]),
+      markdown.markdown({addKeymap:false,completeHTMLTags:false,extensions:[
+        gfm.Table,gfm.TaskList,gfm.Strikethrough,gfm.Autolink,
+        {props:[highlight.styleTags({CodeMark:tags.processingInstruction,'InlineCode/CodeMark':tags.monospace})]}
+      ],codeLanguages:info=>{
+        const spec=resolveLanguage(info);return spec?descriptions.get(spec.name):null;
+      }}),
+      language.syntaxHighlighting(styles),
+      view.EditorView.updateListener.of(update=>{
+        if(update.startState.field(rawField)!==update.state.field(rawField)) changed(update.transactions.some(tr=>tr.annotation(programmatic))?'programmatic':'user');
+      })
+    ]});
+    // Construct offscreen while the textarea still owns the live document.
+    editor=new view.EditorView({state:editorState,parent:$('enhanced')});
+    const isolate=[commands.isolateHistory.of('full')];
+    const next={
+      getContent:()=>editor.state.field(rawField),getText:()=>editor.state.doc.toString(),
+      selection:()=>editor.state.selection.main,focus:()=>editor.focus(),
+      undo:()=>commands.undo(editor),redo:()=>commands.redo(editor),
+      replace(from,to,text,anchor,head) {editor.dispatch({changes:{from,to,insert:text},selection:{anchor,head},annotations:isolate,scrollIntoView:true});},
+      setContent(text) {
+        if(text===editor.state.field(rawField))return;
+        editor.dispatch({changes:{from:0,to:editor.state.doc.length,insert:normalize(text)},effects:rawEffect.of(text),selection:{anchor:0},annotations:[...isolate,programmatic.of(true)]});
+      },
+      restore(text) {editor.dispatch({changes:{from:0,to:editor.state.doc.length,insert:normalize(text)},effects:rawEffect.of(text),annotations:state.Transaction.addToHistory.of(false)});},
+      hasHistory:()=>true,isComposing:()=>editor.composing
+    };
+    adapter.destroy();adapter=next;$('source').hidden=true;$('enhanced').hidden=false;
+    if(focused) editor.focus();window.scrollTo(scroll.x,scroll.y);
+  } catch(error) {
+    $('enhanced').replaceChildren();
+    const message='Syntax highlighting is unavailable. You can still write, save locally, and download Markdown.';
+    notice('dependency-error',message,[['Retry highlighting',()=>{$('dependency-error')?.remove();enhance();}]]);report('dependency',message,error);
+  }
+}
+
+// A small block scanner for dependency-free filenames. Recognizes CommonMark
+// ATX/Setext headings, containers, indented code, fenced code, and HTML blocks.
+function headingTitle(source) {
+  const lines=normalize(source).split('\n');let fence=null,paragraph=[],htmlEnd=null,htmlBlank=false,listIndent=0,quoteDepth=0;
+  const reset=()=>{paragraph=[];};
+  for(let line of lines) {
+    const quote=/^(?: {0,3}>[ \t]?)+/.exec(line);
+    const depth=quote?(quote[0].match(/>/g)||[]).length:0;
+    if(depth!==quoteDepth) {reset();fence=null;htmlEnd=null;htmlBlank=false;listIndent=0;}
+    quoteDepth=depth;
+    line=line.slice(quote?quote[0].length:0);
+    const item=/^( {0,3})(?:[-+*]|\d{1,9}[.)])([ \t]+)(.*)$/.exec(line);
+    if(item) {listIndent=line.length-item[3].length;line=item[3];reset();}
+    else if(listIndent&&line.startsWith(' '.repeat(listIndent))) line=line.slice(listIndent);
+    else if(line.trim()&&listIndent) {listIndent=0;if(fence){fence=null;reset();}}
+    if(fence) {if(new RegExp('^ {0,3}'+fence.char+'{'+fence.length+',}[ \\t]*$').test(line))fence=null;continue;}
+    if(htmlEnd) {if(htmlEnd.test(line))htmlEnd=null;continue;}
+    if(htmlBlank) {if(!line.trim())htmlBlank=false;continue;}
+    const open=/^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+    if(open&&!(open[1][0]==='`'&&open[2].includes('`'))) {fence={char:open[1][0],length:open[1].length};reset();continue;}
+    const htmlStarts=[[/^ {0,3}<(script|pre|style|textarea)(?:\s|>|$)/i,/<\/(?:script|pre|style|textarea)>/i],[/^ {0,3}<!--/,/-->/],[/^ {0,3}<\?/,/\?>/],[/^ {0,3}<!\[CDATA\[/,/\]\]>/],[/^ {0,3}<![A-Z]/,/>/]];
+    let html=false;
+    for(const [start,end] of htmlStarts) if(start.test(line)){if(!end.test(line))htmlEnd=end;html=true;break;}
+    if(html){reset();continue;}
+    if(/^ {0,3}<\/?(?:address|article|aside|base|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|h[1-6]|head|header|hr|html|iframe|legend|li|link|main|menu|nav|ol|p|section|summary|table|tbody|td|tfoot|th|thead|title|tr|ul)(?:\s|\/?>|$)/i.test(line)||(!paragraph.length&&/^ {0,3}<\/?[A-Za-z][\w-]*(?:\s+[^<>]*)?\s*\/?>\s*$/.test(line))) {htmlBlank=true;reset();continue;}
+    if(/^ {0,3}=+[ \t]*$/.test(line)&&paragraph.length) return plainTitle(paragraph.join(' '));
+    const atx=/^ {0,3}#(?:[ \t]+(.*)|[ \t]*)$/.exec(line);
+    if(atx) return plainTitle((atx[1]||'').replace(/(?:^|[ \t]+)#+[ \t]*$/,''));
+    if(!line.trim()||/^(?: {4}|\t)/.test(line)||/^ {0,3}(?:#{1,6}(?:\s|$)|(?:[-*_][ \t]*){3,}$|\[[^\]]+\]:|[-=]+\s*$)/.test(line)) {reset();continue;}
+    paragraph.push(line.trim());
+  }
+  return '';
+}
+function plainTitle(value) {
+  const literals=[];
+  // Protect escaped punctuation and code spans before removing inline markup.
+  value=value.replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\]^_`{|}~\\])|(`+)([\s\S]*?)\2/g,(_match,escaped,_ticks,code)=>{
+    let text=escaped??code.replace(/\n/g,' ');
+    if(!escaped&&/^ .* $/.test(text)&&text.trim())text=text.slice(1,-1);
+    return '\u0000'+(literals.push(text)-1)+'\u0000';
+  });
+  return value.replace(/!?(\[([^\]]*)\])(?:\([^)]*\)|\[[^\]]*\])/g,'$2')
+    .replace(/<([^ >]+@[^ >]+)>/g,'$1').replace(/<(https?:\/\/[^>]+)>/g,'$1')
+    .replace(/<[^>]*>/g,'')
+    .replace(/(\*{1,3}|~~)(.+?)\1/g,'$2')
+    .replace(/(^|[^\w])(_{1,3})(.+?)\2(?!\w)/g,'$1$3')
+    .replace(/&(?:#[0-9]+|#x[0-9a-f]+|[a-z][a-z0-9]+);/gi,entity=>new DOMParser().parseFromString(entity,'text/html').body.textContent)
+    .replace(/\u0000(\d+)\u0000/g,(_match,index)=>literals[Number(index)]??'')
+    .replace(/\s+/g,' ').trim();
+}
+function filenameStem(source) {
+  let title=headingTitle(source).replace(/[<>:"/\\|?*\u0000-\u001f\u007f-\u009f]/g,'').replace(/[. ]+$/g,'').trim();
+  // Bound both characters and UTF-8 bytes, leaving room for the extension.
+  let bytes=0;
+  title=Array.from(title).slice(0,100).filter(char=>{bytes+=new TextEncoder().encode(char).length;return bytes<=200;}).join('').replace(/[. ]+$/g,'');
+  if(/^(con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])(?:\.|$)/i.test(title)) title='_'+title;
+  return title||'Untitled';
+}
+const escapeHTML=value=>value.replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+
+const documentCSS=`
+html { font-size:16px; color-scheme:light; background:#fff; color:#36394d; }
+* { box-sizing:border-box; }
+body { max-width:900px; margin:0 auto; padding:56px 32px; font-family:Inter,system-ui,sans-serif; line-height:1.5; overflow-wrap:anywhere; }
+p { line-height:1.5; margin:0 0 1em; }
+h1,h2,h3,h4,h5,h6 { line-height:1.2; margin:1em 0 .4em; font-weight:700; }
+h1 { font-size:2.488rem; } h2 { font-size:2.074rem; } h3 { font-size:1.728rem; }
+h4 { font-size:1.44rem; } h5 { font-size:1.2rem; } h6 { font-size:1rem; }
+body>h1:first-child { margin-top:0; } small { font-size:.833rem; }
+pre,code { font-family:Hack,ui-monospace,monospace; font-synthesis:none; }
+code { font-size:.9em; background:#eff1f5; padding:.12em .25em; border-radius:3px; }
+pre { white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; padding:16px; background:#eff1f5; border-radius:6px; line-height:1.5; }
+pre code { padding:0; background:transparent; }
+a { color:#1e66f5; text-decoration-thickness:1px; text-underline-offset:2px; }
+blockquote { margin:1.2em 0; padding:.2em 1.2em; border-left:3px solid #acb0be; color:#5c5f77; }
+blockquote>:last-child { margin-bottom:0; }
+ul,ol { margin:0 0 1em; padding-left:1.7em; } li { margin:.25em 0; } li>ul,li>ol { margin:.25em 0; }
+input[type=checkbox] { margin-right:.5em; accent-color:#7287fd; }
+table { width:100%; border-collapse:collapse; margin:1.5em 0; table-layout:fixed; }
+th,td { border:1px solid #ccd0da; padding:.55em .7em; text-align:left; overflow-wrap:anywhere; }
+th { background:#eff1f5; font-weight:700; } img { max-width:100%; height:auto; } hr { border:0; border-top:1px solid #ccd0da; margin:2em 0; }
+.hljs-comment,.hljs-quote { color:#6c6f85; font-style:italic; }
+.hljs-keyword,.hljs-selector-tag,.hljs-literal,.hljs-doctag { color:#8839ef; }
+.hljs-string,.hljs-regexp,.hljs-addition { color:#326f25; }
+.hljs-number,.hljs-symbol,.hljs-bullet { color:#985b00; }
+.hljs-title,.hljs-section,.hljs-selector-id,.hljs-selector-class { color:#1e66f5; }
+.hljs-type,.hljs-built_in,.hljs-attr,.hljs-attribute,.hljs-name,.hljs-tag { color:#087e70; }
+.hljs-variable,.hljs-template-variable,.hljs-deletion { color:#d20f39; }
+.hljs-meta { color:#6c6f85; } .hljs-emphasis { font-style:italic; } .hljs-strong { font-weight:700; }
+@media(max-width:600px) { body { padding:28px 20px; } }
+@page { margin:18mm; }
+@media print {
+  html,body { background:white; color:#24273a; } body { max-width:none; padding:0; }
+  h1,h2,h3,h4,h5,h6 { break-after:avoid-page; } p,li { orphans:3; widows:3; }
+  thead { display:table-header-group; } tr { break-inside:avoid; }
+  pre { break-inside:auto; box-decoration-break:clone; }
+  pre.short-code { break-inside:avoid; } img { break-inside:avoid; }
+  a { color:#174ea6; } blockquote { page-break-inside:avoid; break-inside:avoid; }
+}
+`;
+async function buildDocument(source,stem) {
+  const [{Marked},purifierModule]=await Promise.all([load('marked'),load('dompurify')]);
+  const purify=purifierModule.default;
+  const parser=new Marked({gfm:true,breaks:false});
+  const tokens=parser.lexer(source),needed=new Set();
+  parser.walkTokens(tokens,token=>{if(token.type==='code'){const spec=resolveLanguage(token.lang);if(spec)needed.add(spec.highlight);}});
+  let highlighter=null;
+  if(needed.size) {
+    try {
+      highlighter=(await load('highlight.js/lib/core')).default;
+      await Promise.all([...needed].map(async name=>{
+        if(!highlighter.getLanguage(name)) highlighter.registerLanguage(name,(await load('highlight.js/lib/languages/'+name)).default);
+      }));
+    } catch(error) {
+      const message='Some code highlighting could not load. This export uses plain code where needed.';
+      report('highlighter',message,error);notice('highlight-export-warning',message);
+    }
+  }
+  parser.use({renderer:{code(token) {
+    const spec=resolveLanguage(token.lang);let code=escapeHTML(token.text);
+    if(spec&&highlighter?.getLanguage(spec.highlight)) {
+      try {code=highlighter.highlight(token.text,{language:spec.highlight,ignoreIllegals:true}).value;}
+      catch(error) {report('highlighter','Code highlighting failed; exported as plain code.',error);notice('highlight-export-warning','Some code could not be highlighted and was exported as plain text.');}
+    }
+    const short=token.text.split('\n').length<=12&&token.text.length<=800?' class="short-code"':'';
+    return '<pre'+short+'><code>'+code+'</code></pre>\n';
+  }}});
+  const fragment=purify.sanitize(parser.parser(tokens),{
+    RETURN_DOM_FRAGMENT:true,
+    ALLOWED_TAGS:['p','br','hr','h1','h2','h3','h4','h5','h6','strong','em','del','s','a','img','ul','ol','li','blockquote','pre','code','table','thead','tbody','tfoot','tr','th','td','span','input','sup','sub','small','details','summary','dl','dt','dd','kbd','mark'],
+    ALLOWED_ATTR:['href','src','alt','title','class','type','checked','disabled','start','reversed','colspan','rowspan','align'],
+    ALLOW_DATA_ATTR:false,ALLOW_ARIA_ATTR:false
+  });
+  // Only constrained DOM operations follow sanitization. No untrusted HTML is
+  // re-parsed or interpolated after this boundary.
+  for(const node of fragment.querySelectorAll('input')) {
+    if(node.getAttribute('type')!=='checkbox')node.remove();else node.disabled=true;
+  }
+  for(const node of fragment.querySelectorAll('[class]')) {
+    node.className=node.className.split(/\s+/).filter(name=>/^hljs-[\w-]+$/.test(name)||name==='short-code').join(' ');
+  }
+  for(const node of fragment.querySelectorAll('[href],[src]')) {
+    for(const attr of ['href','src']) if(node.hasAttribute(attr)) {
+      const raw=node.getAttribute(attr);
+      if(attr==='href'&&raw.startsWith('#'))continue;
+      try {
+        const url=new URL(raw,document.baseURI);
+        const allowed=attr==='href'?['http:','https:','mailto:','tel:']:['http:','https:'];
+        if(location.protocol==='file:')allowed.push('file:');
+        if(attr==='src'&&/^data:image\/(?:png|jpeg|gif|webp);base64,/i.test(raw))continue;
+        if(!allowed.includes(url.protocol))node.removeAttribute(attr);else node.setAttribute(attr,url.href);
+      } catch {node.removeAttribute(attr);}
+    }
+  }
+  const container=document.createElement('div');container.append(fragment);
+  const policy="default-src 'none'; img-src https: http: file: data:; font-src https://cdn.jsdelivr.net; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'";
+  return '<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'+
+    '<meta http-equiv="Content-Security-Policy" content="'+escapeHTML(policy)+'"><title>'+escapeHTML(stem)+'</title><style>'+$('font-styles').textContent+'\n'+documentCSS+'</style></head><body>'+container.innerHTML+'</body></html>';
+}
+
+// Export controller: all work uses the source captured before the first await.
+function download(source,filename,type) {
+  const blob=new Blob([source],{type:type+';charset=utf-8'}),url=URL.createObjectURL(blob);
+  try {
+    const link=document.createElement('a');link.href=url;link.download=filename;link.hidden=true;
+    document.body.append(link);link.click();link.remove();
+  } finally {setTimeout(()=>URL.revokeObjectURL(url),60000);}
+}
+function finishExport(result) {
+  if(result.ok&&result.format!=='md')$('export-error')?.remove();
+  emit('export',result);return result;
+}
+function printNow(printFrame,filename) {
+  if(!printFrame.isConnected)throw new Error('The print document was removed. Retry PDF export.');
+  const printWindow=printFrame.contentWindow;
+  // afterprint means the dialog finished (including cancellation), not PDF saved.
+  printWindow.addEventListener('afterprint',()=>setTimeout(()=>printFrame.remove(),250),{once:true});
+  printWindow.focus();printWindow.print();
+  return {format:'pdf',ok:true,filename,outcome:'print-opened'};
+}
+async function preparePrint(printFrame,html) {
+  if(!printFrame.isConnected)throw new Error('The print document was removed. Retry PDF export.');
+  const printWindow=printFrame.contentWindow;
+  const loaded=new Promise((resolve,reject)=>{
+    try {
+      // document.open() clears window listeners: subscribe only after opening.
+      printWindow.document.open();
+      printWindow.addEventListener('load',resolve,{once:true});
+      printWindow.document.write(html);printWindow.document.close();
+    }
+    catch(error){reject(error);}
+  });
+  if(!printFrame.isConnected)throw new Error('The print document was removed. Retry PDF export.');
+  const doc=printWindow.document;
+  // Font CSS is inline in the shared document: it is ready at document load.
+  const resources=[bounded(loaded,12000,'Print document loading'),...[...doc.images].map((img,index)=>bounded((async()=>{
+    if(!img.complete)await new Promise((resolve,reject)=>{
+      img.addEventListener('load',resolve,{once:true});img.addEventListener('error',()=>reject(new Error('Image '+(index+1)+' failed to load.')),{once:true});
+    });
+    if(!img.naturalWidth)throw new Error('Image '+(index+1)+' is unavailable.');
+    if(img.decode)await img.decode();
+  })(),12000,'Image '+(index+1)))];
+  if(doc.fonts)resources.push(bounded((async()=>{
+    await Promise.all(['400 16px Inter','700 16px Inter','400 16px Hack','700 16px Hack','italic 400 16px Hack','italic 700 16px Hack'].map(font=>doc.fonts.load(font)));
+    await doc.fonts.ready;
+  })(),12000,'Fonts'));
+  const results=await Promise.allSettled(resources);
+  if(!printFrame.isConnected)throw new Error('The print document was removed. Retry PDF export.');
+  const failures=results.filter(result=>result.status==='rejected');
+  if(failures.length) {
+    const error=new Error('Some print resources could not load ('+failures.length+'). Remote or relative images may be unavailable; fonts may need a network connection.');
+    error.resources=true;throw error;
+  }
+}
+let renderBusy=0;
+async function exportSnapshot(format,source) {
+  const stem=filenameStem(source),filename=stem+'.'+format;
+  let printFrame=null;
+  if(format!=='md') {renderBusy++;$('export-button').setAttribute('aria-busy','true');}
+  try {
+    if(format==='md') {
+      download(source,filename,'text/markdown');
+      return finishExport({format,ok:true,filename,outcome:'download-started'});
+    }
+    const html=await buildDocument(source,stem);
+    if(format==='html') {
+      download(html,filename,'text/html');
+      return finishExport({format,ok:true,filename,outcome:'download-started'});
+    }
+    printFrame=document.createElement('iframe');
+    printFrame.title='Print document';printFrame.setAttribute('aria-hidden','true');printFrame.tabIndex=-1;
+    // Keep a rendered browsing context for printing without adding a tab.
+    printFrame.style.cssText='position:fixed;left:-10000px;top:0;width:800px;height:600px;border:0;pointer-events:none';
+    document.body.append(printFrame);
+    await preparePrint(printFrame,html);
+    return finishExport(printNow(printFrame,filename));
+  } catch(error) {
+    const message=error.message||'Export failed. Please retry.';
+    report('export',message,error);
+    const actions=[['Retry '+format.toUpperCase(),()=>{printFrame?.remove();exportSnapshot(format,source);}]];
+    if(error.resources&&printFrame?.isConnected) actions.push(['Print available resources',()=>{
+      try {finishExport(printNow(printFrame,filename));$('export-error')?.remove();}
+      catch(cause) {printFrame?.remove();report('export',cause.message,cause);notice('export-error',cause.message,[['Retry PDF',()=>exportSnapshot('pdf',source)]]);finishExport({format,ok:false,error:cause.message});}
+    }]);
+    else printFrame?.remove();
+    actions.push(['Download Markdown',()=>exportSnapshot('md',source)]);
+    notice('export-error',message,actions);
+    return finishExport({format,ok:false,error:message});
+  } finally {
+    if(format!=='md'&&--renderBusy===0)$('export-button').removeAttribute('aria-busy');
+  }
+}
+async function exportDocument(format) {
+  if(!['md','html','pdf'].includes(format))throw new TypeError('Export format must be md, html, or pdf.');
+  return exportSnapshot(format,adapter.getContent());
+}
+
+// Application shell: a conventional keyboard-accessible menu; Tab is never trapped.
+const exportButton=$('export-button'),menu=$('export-menu'),menuItems=[...menu.querySelectorAll('button')];
+function focusItem(index) {menuItems.forEach((item,i)=>item.tabIndex=i===index?0:-1);menuItems[index].focus();}
+function openMenu(index=0) {menu.hidden=false;exportButton.setAttribute('aria-expanded','true');focusItem(index);}
+function closeMenu(returnFocus=false) {menu.hidden=true;exportButton.setAttribute('aria-expanded','false');menuItems.forEach(item=>item.tabIndex=-1);if(returnFocus)exportButton.focus();}
+exportButton.addEventListener('click',()=>menu.hidden?openMenu():closeMenu(true));
+exportButton.addEventListener('keydown',event=>{
+  if(event.key==='ArrowDown'||event.key==='ArrowUp') {event.preventDefault();openMenu(event.key==='ArrowUp'?menuItems.length-1:0);}
+  if(event.key==='Escape'&&!menu.hidden) {event.preventDefault();closeMenu(true);}
+});
+menu.addEventListener('keydown',event=>{
+  const index=menuItems.indexOf(document.activeElement);
+  const destinations={ArrowDown:(index+1)%menuItems.length,ArrowUp:(index-1+menuItems.length)%menuItems.length,Home:0,End:menuItems.length-1};
+  if(event.key in destinations){event.preventDefault();focusItem(destinations[event.key]);}
+  else if(event.key==='Escape'){event.preventDefault();closeMenu(true);}
+  else if(event.key==='Tab')setTimeout(()=>closeMenu(),0);
+});
+menuItems.forEach(item=>item.addEventListener('click',()=>{closeMenu(true);exportDocument(item.dataset.format);}));
+document.addEventListener('keydown',event=>{
+  if(event.isComposing||event.altKey||event.shiftKey||(mac?!event.metaKey:!event.ctrlKey)||event.key.toLowerCase()!=='p')return;
+  event.preventDefault();event.stopPropagation();
+  if(event.repeat)return;
+  closeMenu(true);exportDocument('pdf');
+},{capture:true});
+document.addEventListener('pointerdown',event=>{if(!menu.hidden&&!$('controls').contains(event.target))closeMenu();});
+document.addEventListener('focusin',event=>{if(!menu.hidden&&!$('controls').contains(event.target))closeMenu();});
+adapter.focus();
+enhance();
+})();
+</script>
+</body>
+</html>
